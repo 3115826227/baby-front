@@ -12,13 +12,12 @@
                   <el-avatar :src="detail.head_img_url" size="small" fit="fit"></el-avatar>
                   <span>{{detail.username}}@baby.com</span>
                 </template>
-                <el-menu-item @click="toPunch">每日打卡</el-menu-item>
-                <el-menu-item index="4-2" @click="logout">退出</el-menu-item>
+                <el-menu-item index="4-2" @click="logout">退出登录</el-menu-item>
               </el-submenu>
             </el-menu>
         </el-header>
-        <el-container id="content">
-            <el-main class="el-main">
+        <el-container id="content" style="height:100%">
+            <el-main class="el-main" style="height:100%">
                 <el-breadcrumb separator-class="el-icon-arrow-right">
                   <el-breadcrumb-item v-for="item in levelList" :key="item.path">
                     <span>{{item.name}}</span>
@@ -27,11 +26,6 @@
                 <Content></Content>
             </el-main>
         </el-container>
-        <el-dialog title="打卡"
-        :visible.sync="punchdialogVisible" width="70%">
-          <el-calendar v-model="value">
-          </el-calendar>
-        </el-dialog>
     </el-container>
 </template>
 
@@ -49,7 +43,6 @@ export default {
   data () {
     return {
       value: new Date(),
-      punchdialogVisible: false,
       levelList: null,
       detail: {},
       privateMessageUnreadNumber: 1
@@ -82,17 +75,16 @@ export default {
       if (!sessionStorage.getItem('token')) {
           window.location.href = '/'
       }
-      var that = this
-      detail()
-        .then(function (response) {
-          that.detail = response.data.data
+      detail().then(response => {
+          this.detail = response.data.data
           if (response.data.data.verify === true) {
-            that.verify = '已认证'
+            this.verify = '已认证'
           } else {
-            that.verify = ''
+            this.verify = ''
           }
+          sessionStorage.setItem('detail', JSON.stringify(this.detail))
         })
-        .catch(function (error) {
+        .catch(error => {
           console.log(error)
         })
     },
@@ -107,8 +99,8 @@ export default {
           console.log(error)
         })
     },
-    toPunch () {
-      this.punchdialogVisible = true
+    toUser() {
+      window.location.href = "/user"
     }
   },
   created () {
@@ -121,6 +113,7 @@ export default {
 <style scoped>
 #index-container {
   background-color: #f4f5f5;
+  height:  100%;
 }
 .el-header {
   padding: 0;

@@ -11,6 +11,8 @@
                       {{item.name}}
                       <el-tag size="mini">
                         <span v-if="item.session_type === 0">双人会话</span>
+                        <span v-else-if="item.session_type === 1">讨论组</span>
+                        <span v-else-if="item.session_type === 2">群会话</span>
                       </el-tag>
                     </el-col>
                     <el-col :span="4" style="text-align:right;" v-if="item.unread">
@@ -19,13 +21,13 @@
                     </el-col>
                   </el-row>
                   <el-row style="color:gray;font-size:14px;" v-if="item.latest_message">
-                    <el-col :span="12">
+                    <el-col :span="14">
                       <span v-if="item.latest_message.send.account_id !== user_id">
                         <span v-if="item.latest_message.send.remark === ''">{{item.latest_message.send.username}}</span>
                         <span v-else="">{{item.latest_message.send.remark}}</span>
                         ：</span>{{item.latest_message.content}}
                     </el-col>
-                    <el-col :span="12" style="text-align:right">
+                    <el-col :span="10" style="text-align:right">
                       {{timestampToTime(item.latest_message.send_timestamp)}}
                     </el-col>
                   </el-row>
@@ -50,7 +52,23 @@
                   </div>
                 </el-card>
               </el-tab-pane>
-              <el-tab-pane label="群组" name="group">
+              <el-tab-pane label="会话" name="group">
+                <el-row style="margin:2% 0">
+                  <el-col :span="15" style="padding-right:4%">
+                    <el-input type="text" size="small" />
+                  </el-col>
+                  <el-col :span="4">
+                    <el-button type="success" size="small">查询</el-button>
+                  </el-col>
+                  <el-col :span="5" style="text-align:right">
+                    <el-button type="primary" size="small" @click="addSessionDrawer = true">创建会话</el-button>
+                  </el-col>
+                </el-row>
+                <el-card class="border-card" v-for="(item, index) in sessions" :key="index" style="margin:2% 0" shadow="hover">
+                  <div>
+                    {{item.name}}
+                  </div>
+                </el-card>
               </el-tab-pane>
               <el-tab-pane label="通知" name="notify">
                 <el-card class="border-card" v-for="(item, index) in operators" :key="index" style="margin:2% 0" shadow="hover">
@@ -94,9 +112,11 @@
               <div id="im-panel">
                 <el-card class="box-card">
                   <div slot="header">
-                    <span>{{session.name}}</span>
+                    <span>{{session.name}} </span>
                     <el-tag size="mini">
                       <span v-if="session.session_type === 0">双人会话</span>
+                        <span v-else-if="session.session_type === 1">讨论组</span>
+                        <span v-else-if="session.session_type === 2">群会话</span>
                     </el-tag>
                   </div>
                   <div id="im-messages" style="height:380px;overflow:auto">
@@ -150,6 +170,7 @@
                   <el-input type="textarea" v-model="send_form.content" rows="4" style="width:68%;"></el-input>
                 </div>
                 <div>
+                  <el-button type="success" @click="createVideo">发起视频</el-button>
                   <el-button type="primary" @click="send">发送</el-button>
                 </div>
               </div>
@@ -223,12 +244,22 @@
           <div v-if="query_user.account_id !== ''" style="margin:5%">
           <el-card class="border-card" shadow="hover">
             <el-row>
-              <el-col :span="18">
-                {{query_user.username}}
-              </el-col>
-              <el-col :span="6" style="text-align:right">
-                <el-button type="primary" size="mini" @click="addFriend">添加好友</el-button>
-              </el-col>
+              <template v-if="query_user.is_friend">
+                <el-col :span="12">
+                  {{query_user.remark}} <el-tag type="success" size="small">好友</el-tag>
+                </el-col>
+                <el-col :span="12" style="text-align:right">
+                  <el-button type="primary" size="mini" @click="addFriend" disabled>添加好友</el-button>
+                </el-col>
+              </template>
+              <template v-else="">
+                <el-col :span="18">
+                  {{query_user.username}}
+                </el-col>
+                <el-col :span="6" style="text-align:right">
+                  <el-button type="primary" size="mini" @click="addFriend">添加好友</el-button>
+                </el-col>
+              </template>
             </el-row>
           </el-card>
           </div>
@@ -290,10 +321,56 @@
             </div>
           </div>
         </el-drawer>
+        <el-drawer
+        title="添加会话"
+        :visible.sync="addSessionDrawer"
+        direction="rtl"
+        :before-close="handleCloseAddSessionDrawer">
+          <el-table :data="friends" ref="multipleSessionFriendSelection" style="width: 100%" @selection-change="handleSelectionFriendChange">
+            <el-table-column
+              type="selection"
+              width="55">
+            </el-table-column>
+            <el-table-column
+              prop="remark"
+              label="昵称">
+            </el-table-column>
+          </el-table>
+          <el-row style="margin-top:5%">
+            <el-col :span="6" style="line-height:40px;text-align:center">
+              <label>会话名称：</label>
+            </el-col>
+            <el-col :span="16">
+              <el-input v-model="session_name" placeholder="请输入会话名称" style="width:80%"></el-input>
+            </el-col>
+          </el-row>
+          <el-row style="margin-top:5%">
+            <el-col :span="6" style="line-height:20px;text-align:center">
+              <label>会话类别：</label>
+            </el-col>
+            <el-col :span="16">
+              <el-radio-group v-model="session_type">
+                <el-radio v-for="item in session_types" :key="item.id" :label="item.id">{{item.name}}</el-radio>
+              </el-radio-group>
+            </el-col>
+          </el-row>
+          <el-row style="text-align:center;margin-top:5%">
+            <el-button type="primary" @click="addSession()">添加会话</el-button>
+          </el-row>
+        </el-drawer>
+        <el-dialog title="视频" :visible.sync="videoVisible" width="80%" :before-close="handleCloseVideo">
+          <textarea v-model="localSession" cols="100" rows="10"></textarea><br/>
+          <textarea v-model="remoteSession" cols="100" rows="10"></textarea>
+          <video id="local-video" width="160" height="120" autoplay muted></video>
+          <br/>
+          <video id="remote-video" width="480" height="360" autoplay muted></video>
+          <br/>
+          <div id="logs"></div>
+        </el-dialog>
     </div>
 </template>
 <script>
-import { session, sessionDetail, sessionMessages,readstatus, friends, addFriend, operators, deleteOpt } from '@/api/im'
+import { addSession, session, sessionDetail, sessionMessages,readstatus, friends, addFriend, operators, deleteOpt, createWebRTC } from '@/api/im'
 import { query } from '@/api/user'
 
 export default {
@@ -303,10 +380,21 @@ export default {
       activeName: 'session',
       friendDrawer: false,
       addFriendDrawer: false,
+      addSessionDrawer: false,
       panel: 0,
       name: '1',
       friend: {},
       friends: [],
+      multipleSessionFriendSelection: [],
+      session_types: [{
+        id: 1,
+        name: '讨论组会话'
+      }, {
+        id: 2,
+        name: '群会话'
+      }],
+      session_type: 1,
+      session_name: '',
       session: {
         session_id: 0
       },
@@ -333,7 +421,24 @@ export default {
       friend_detail_form: {},
       wxImgList: ['微笑', '撇嘴', '色', '发呆', '得意', '流泪', '害羞', '闭嘴', '睡', '大哭', '尴尬', '发怒', '调皮', '呲牙', '惊讶', '难过', '酷', '冷汗', '抓狂', '吐', '偷笑', '可爱', '白眼', '傲慢', '饥饿', '困', '惊恐', '流汗', '憨笑', '大兵', '奋斗', '咒骂', '疑问', '嘘', '晕', '折磨', '衰', '骷髅', '敲打', '再见', '擦汗', '抠鼻', '鼓掌', '糗大了', '坏笑', '左哼哼', '右哼哼', '哈欠', '鄙视', '委屈', '快哭了', '阴险', '亲亲', '吓', '可怜', '菜刀', '西瓜', '啤酒', '篮球', '乒乓', '咖啡', '饭', '猪头', '玫瑰', '凋谢', '示爱', '爱心', '心碎', '蛋糕', '闪电', '炸弹', '刀', '足球', '瓢虫', '便便', '月亮', '太阳', '礼物', '拥抱', '强', '弱', '握手', '胜利', '抱拳', '勾引', '拳头', '差劲', '爱你', 'NO', 'OK', '爱情', '飞吻', '跳跳', '发抖', '怄火', '转圈', '磕头', '回头', '跳绳', '挥手', '激动', '街舞', '献吻', '左太极', '右太极'],
       wxImgVisisable: false,
-      file: {}
+      file: {},
+      videoVisible: false,
+      remoteSession: '',
+      localSession: '',
+      localPC: null,
+      remotePC: null,
+      constraints: {
+          audio: {
+            noiseSuppression: true,
+            echoCancellation: true
+          },
+          video: {
+            width: 1920,
+            height: 1080,
+            frameRate: 30,
+            facingMode: "environment"
+        }
+      },
     }
   },
   created () {
@@ -344,6 +449,58 @@ export default {
     this.initWebSocket()
   },
   methods: {
+    log (msg) {
+      document.getElementById('logs').innerHTML += msg + '<br>'
+      // console.log(msg)
+    },
+    webRTCSession (isPublisher) {
+      var that = this;
+      let pc = new RTCPeerConnection({
+          iceServers: [
+              {
+                  urls: 'stun:stun.l.google.com:19302'
+              }
+          ]
+      });
+      pc.oniceconnectionstatechange = e => {
+        that.log(e);
+        that.log(pc.iceConnectionState);
+      }
+
+      if (isPublisher) {
+          pc.onicecandidate = event => {
+              if (event.candidate === null) {
+                  that.localSession = btoa(JSON.stringify(pc.localDescription))
+              }
+          };
+          navigator.mediaDevices.getUserMedia({video: true, audio: false})
+              .then(stream => {
+                  stream.getTracks().forEach(track => pc.addTrack(track, stream));
+                  document.getElementById('local-video').srcObject = stream;
+                  pc.createOffer()
+                      .then(d => pc.setLocalDescription(d))
+                      .catch(that.log)
+              }).catch(that.log);
+          that.localPC = pc
+      } else {
+          pc.onicecandidate = event => {
+              if (event.candidate === null) {
+                  that.remoteSession = btoa(JSON.stringify(pc.localDescription))
+              }
+          };
+          pc.addTransceiver('video');
+          pc.createOffer()
+              .then(d => pc.setLocalDescription(d))
+              .catch(that.log);
+
+          pc.ontrack = function (event) {
+              let el = document.getElementById('remote-video');
+              el.srcObject = event.streams[0];
+              // el.autoplay = true;
+          };
+          that.remotePC = pc
+      }
+    },
     openFriendDrawer (accountId) {
       this.friendDrawer = true
       var that = this
@@ -356,11 +513,43 @@ export default {
           console.log(error)
         })
     },
+    addSession () {
+      let ids = []
+      ids.push(sessionStorage.getItem('user_id'))
+      this.multipleSessionFriendSelection.forEach(element => {
+        ids.push(element.account_id)
+      })
+      let params = {
+        session_type: this.session_type,
+        session_level: 1,
+        name: this.session_name,
+        joins: ids
+      }
+      console.log(params)
+      addSession(params).then(response => {
+        if (response.data.code === 0) {
+          this.$message.success('创建成功')
+          this.getSessions()
+        } else {
+          this.$message.error('创建失败')
+        }
+      }).catch(error => {
+        console.log(error)
+        this.$message.error('请求错误')
+      })
+      this.addSessionDrawer = false
+    },
     handleCloseFriendDrawer (done) {
       done()
     },
     handleCloseAddFriendDrawer (done) {
       done()
+    },
+    handleCloseAddSessionDrawer (done) {
+      done()
+    },
+    handleSelectionFriendChange (val) {
+        this.multipleSessionFriendSelection = val;
     },
     scrollToBottom () {
       this.$nextTick(() => {
@@ -508,6 +697,7 @@ export default {
         .then(function (response) {
           if (response.data.code === 0) {
             that.$message.success('添加成功')
+            that.getUser(this.query_user.accountId)
             that.getFriends()
           } else {
             that.$message.error('请求出错')
@@ -620,6 +810,28 @@ export default {
       }
       this.websocketsend(JSON.stringify(actions))
       this.send_form = {}
+    },
+    sleep (time) {
+      return new Promise((resolve) => setTimeout(resolve, time));
+    },
+    createVideo () {
+      this.videoVisible = true
+      this.webRTCSession(true)
+      this.sleep(1000).then(() => {
+          createWebRTC({
+            sdp: this.localSession,
+            session_id: this.session.session_id
+          })
+      })
+    },
+    handleCloseVideo (done) {
+      this.$confirm('确认关闭？').then(e => {
+        console.log(e)
+        done();
+      })
+      .catch(e => {
+        console.log(e)
+      });
     },
     changeSendContent () {
       let lastChat = this.send_form.content[this.send_form.content.length - 1]

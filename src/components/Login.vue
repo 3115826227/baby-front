@@ -10,14 +10,6 @@
           <el-form-item label="密码">
               <el-input type="password" v-model="form.password" placeholder=""></el-input>
           </el-form-item>
-          <el-form-item label="验证码">
-            <el-col :span="10" style="margin-right:20px;">
-              <el-input type="code" v-model="form.code" placeholder=""></el-input>
-            </el-col>
-            <el-col :span="10">
-              <img :src="img_code" height="40" />
-            </el-col>
-          </el-form-item>
           <el-form-item label="" id='submit'>
               <el-button type="primary" @click="handleLogin">登陆</el-button>
               <el-button type="primary" @click="toRegister">注册</el-button>
@@ -56,7 +48,7 @@ export default {
             })
         },
         toRegister () {
-
+          this.$router.push({path: '/register'})
         }
     }
 }

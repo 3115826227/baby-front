@@ -14,8 +14,24 @@ export const constantRoutes = [
           index: 1,
           name: '聊天',
           component: () => import('@/components/Main/im.vue')
-        }
+        },
+        {
+          path: '/space',
+          index: 2,
+          name: '空间动态',
+          component: () => import('@/components/Main/space.vue')
+        },
+        {
+          path: '/user',
+          index: 3,
+          name: '个人中心',
+          component: () => import('@/components/Main/user.vue')
+        },
       ]
+     }, {
+        path: '/register',
+        component: () => import('@/components/Register'),
+        hidden: true
      }, {
         path: '/',
         component: () => import('@/components/Login'),

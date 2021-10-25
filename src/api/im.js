@@ -1,5 +1,14 @@
 import request from '@/utils/request'
 
+export function addSession(data) {
+    return request({
+        url: '/im/session',
+        method: 'post',
+        data
+    })
+}
+
+
 export function session() {
     return request({
         url: '/im/session',
@@ -54,5 +63,13 @@ export function deleteOpt(id) {
     return request({
         url: '/im/session/operator?operator_id=' + id,
         method: 'delete'
+    })
+}
+
+export function createWebRTC(data) {
+    return request({
+        url: 'im/session/webrtc',
+        method: 'post',
+        data
     })
 }
