@@ -1,10 +1,11 @@
 <template>
     <div class="content" style="height:100%">
-        <router-view></router-view>
+        <router-view :websocketClient='websocketClient' :websocketMessage='websocketMessage'></router-view>
     </div>
 </template>
 <script>
 export default {
-  name: 'Content'
+  name: 'Content',
+  props: ['websocketClient', 'websocketMessage'],
 }
 </script>

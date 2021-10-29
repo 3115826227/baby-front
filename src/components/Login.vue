@@ -42,9 +42,11 @@ export default {
                     this.$router.push({path: '/index'})
                 } else {
                     console.log(response)
+                    this.$message.error('密码或用户名错误')
                 }
             }).catch(error => {
                 console.log(error)
+                this.$message.error('请求错误')
             })
         },
         toRegister () {

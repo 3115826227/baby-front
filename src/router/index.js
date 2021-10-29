@@ -27,6 +27,18 @@ export const constantRoutes = [
           name: '个人中心',
           component: () => import('@/components/Main/user.vue')
         },
+        {
+          path: '/communication',
+          index: 4,
+          name: '建议反馈',
+          component: () => import('@/components/Main/communication.vue')
+        },
+        {
+          path: '/version',
+          index: 5,
+          name: '版本',
+          component: () => import('@/components/Main/version.vue')
+        },
       ]
      }, {
         path: '/register',

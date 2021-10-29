@@ -58,3 +58,32 @@ export function coinlog() {
         method: 'get'
     })
 }
+
+export function addCommunication(data) {
+    return request({
+        url: 'account/user/communication',
+        method: 'post',
+        data
+    })
+}
+
+export function getCommunications(req) {
+    return request({
+        url: 'account/user/communication?page=' + req.page + '&page_size=' + req.pageSize,
+        method: 'get'
+    })
+}
+
+export function getCommunicationDetail(id) {
+    return request({
+        url: 'account/user/communication/detail?id=' + id,
+        method: 'get'
+    })
+}
+
+export function getVersions() {
+    return request({
+        url: 'account/user/iter/version',
+        method: 'get'
+    })
+}

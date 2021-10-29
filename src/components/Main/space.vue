@@ -33,11 +33,9 @@
                 <el-col :span="14" style="text-align:right;">
                   <span>动态筛选：</span>
                   <el-select v-model="space_type" placeholder="">
-                    <el-option label="所有" value="1"></el-option>
-                    <el-option label="只看认证用户" value="2"></el-option>
-                    <el-option label="只看校内用户" value="3"></el-option>
-                    <el-option label="只看好友" value="4"></el-option>
-                    <el-option label="只看私密" value="5"></el-option>
+                    <el-option label="所有" value="0"></el-option>
+                    <el-option label="仅看好友" value="1"></el-option>
+                    <el-option label="只看自己" value="4"></el-option>
                   </el-select>
                 </el-col>
                 <!-- <el-col :span="4" style="text-align:right;"><span>点击刷新</span></el-col> -->
@@ -50,14 +48,14 @@
               <ul class="space-user-ul">
                 <li v-for="item in spaces" :key="item.id">
                   <el-row>
-                    <el-col :span="2" style="font-weight:500">
+                    <span style="font-weight:500;margin-right:2%">
                       <span v-if="item.origin.remark">{{item.origin.remark}}</span>
                       <span v-else>{{item.origin.username}}</span>
-                    </el-col>
-                    <el-col :span="6" style="font-size:12px;">
+                    </span>
+                    <!-- <span style="font-size:12px;">
                       <span v-if="item.verify" class="verify"><i><strong>V</strong></i> 已认证</span>
                       <span v-else class="unverify">未认证</span>
-                    </el-col>
+                    </span> -->
                   </el-row>
                   <el-row style="color:gray;font-size:14px;line-height:20px;">
                     <el-col :span="12">
@@ -66,12 +64,14 @@
                       <span>{{timestampToTime(item.create_time)}}</span>
                     </el-col>
                   </el-row>
-                  <el-row>
-                    <el-col :span="24">{{item.content}}</el-col>
-                  </el-row>
-                  <el-row v-for="(data, index) in item.images" :key="index">
-                    <img :src="data">
-                  </el-row>
+                  <div>
+                    {{item.content}}
+                    <div v-if="item.images === null || item.images.length != 0">
+                      <div v-for="(data, index) in item.images" :key="index">
+                        <img :src="data">
+                      </div>
+                    </div>
+                  </div>
                   <el-row style="color:gray;font-size:14px;line-height:25px;">
                     <el-col :span="16" style="color:gray;">
                       <i class="iconfont">&#xe61d; </i>
@@ -100,13 +100,13 @@
                     </div>
                     <div v-for="comment in item.comments" :key="comment.id">
                       <el-row>
-                        <el-col :span="3" style="font-weight:500">
+                        <span style="font-weight:500">
                           {{comment.origin.username}}
-                        </el-col>
+                        </span>
                       </el-row>
-                      <el-row>
+                      <div>
                         {{comment.content}}
-                      </el-row>
+                      </div>
                       <el-row>
                         <el-col :span="2" style="font-size:13px">
                           <span v-if="!comment.origin_liked">
@@ -125,9 +125,9 @@
                         <HR SIZE=1 />
                         <div v-for="reply in comment.reply" :key="reply.id">
                           <el-row>
-                            <el-col :span="3" style="font-weight:500">
+                            <span style="font-weight:500">
                               {{reply.origin.username}}
-                            </el-col>
+                            </span>
                           </el-row>
                           <div>
                             {{reply.content}}
@@ -189,7 +189,7 @@ export default {
         visitor_type: '0'
       },
       visit_message: '没有更多啦',
-      space_type: '1',
+      space_type: '0',
       new_space_number: 2,
       spaces: [],
       space_user: [],
@@ -217,7 +217,8 @@ export default {
     getSpaces () {
       var req = {
         page: 1,
-        pageSize: 10
+        pageSize: 10,
+        visitor_type: this.space_type
       }
       getSpaces(req).then(response => {
           if (response.data.code === 0) {

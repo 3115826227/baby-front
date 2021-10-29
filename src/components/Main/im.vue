@@ -375,6 +375,7 @@ import { query } from '@/api/user'
 
 export default {
   name: 'im',
+  props: ['websocketClient', 'websocketMessage'],
   data () {
     return {
       activeName: 'session',
@@ -441,6 +442,11 @@ export default {
       },
     }
   },
+  watch: {
+    websocketMessage (val) {
+      this.receiveMessage(val)
+    }
+  },
   created () {
     this.init()
     this.getSessions()
@@ -466,7 +472,6 @@ export default {
         that.log(e);
         that.log(pc.iceConnectionState);
       }
-
       if (isPublisher) {
           pc.onicecandidate = event => {
               if (event.candidate === null) {
@@ -709,7 +714,7 @@ export default {
         })
     },
     judgeIsConnect () {
-      if (!this.connect) {
+      if (this.websock.readyState != 1) {
         this.$message.error('通讯连接断开，请刷新重试')
         return false
       }
@@ -741,23 +746,9 @@ export default {
         })
     },
     initWebSocket () { // 初始化weosocket
-      const wsuri = 'ws://127.0.0.1:18070/api/connect/websocket?token=' + sessionStorage.getItem('token')
-      this.websock = new WebSocket(wsuri)
-      this.websock.onmessage = this.websocketonmessage
-      this.websock.onopen = this.websocketonopen
-      this.websock.onerror = this.websocketonerror
-      this.websock.onclose = this.websocketclose
+      this.websock = this.websocketClient
     },
-    websocketonopen () { // 连接建立之后执行send方法发送数据
-      console.log('连接成功')
-      this.connect = true
-    },
-    websocketonerror () { // 连接建立失败重连
-      // this.initWebSocket()
-    },
-    websocketonmessage (e) { // 数据接收
-      let redata = JSON.parse(e.data)
-      console.log(redata)
+    receiveMessage (redata) { // 数据接收
       if (redata.ws_message_notify_type === 2) {
         switch (redata.ws_message.session_message.session_message_type) {
           case 1:
@@ -787,10 +778,6 @@ export default {
     },
     websocketsend (Data) { // 数据发送
       this.websock.send(Data)
-    },
-    websocketclose (e) { // 关闭
-      console.log('断开连接', e)
-      this.connect = false
     },
     send () {
       if (!this.judgeIsConnect()) {

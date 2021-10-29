@@ -31,8 +31,8 @@
                     <el-col :span="11">
                         <span>基本信息</span>
                     </el-col>
-                    <el-col :span="12" style="text-align:right;">
-                        <el-link style="font-size:15px;" :underline="false" type="danger">编辑</el-link>
+                    <el-col :span="12" style="text-align:right;" v-if="!edit">
+                        <el-link style="font-size:15px;" :underline="false" type="danger" @click="edit = true;gender = detail.gender.toString()">编辑</el-link>
                     </el-col>
                 </el-row>
             </div>
@@ -43,7 +43,7 @@
                         <label>账号：</label>
                     </el-col>
                     <el-col :span="12">
-                        {{detail.account_id}}
+                        <label>{{detail.account_id}}</label>
                     </el-col>
                 </el-row>
                 <el-row class="panel-content-item">
@@ -51,7 +51,12 @@
                         <label>昵称：</label>
                     </el-col>
                     <el-col :span="12">
-                        {{detail.username}}
+                        <span v-if="edit">
+                            <el-input v-model="detail_form.username" size="small" :placeholder="detail.username"></el-input>
+                        </span>
+                        <span v-else="">
+                            <label>{{detail.username}}</label>
+                        </span>
                     </el-col>
                 </el-row>
                 <el-row class="panel-content-item">
@@ -70,8 +75,29 @@
                         <label>性别：</label>
                     </el-col>
                     <el-col :span="12">
-                        <template v-if="detail.gender">男</template>
-                        <template v-else="">女</template>
+                        <span v-if="edit">
+                            <el-select size="small" v-model="gender">
+                                <el-option label="男" value="1"></el-option>
+                                <el-option label="女" value="2"></el-option>
+                            </el-select>
+                        </span>
+                        <span v-else="">
+                            <template v-if="detail.gender === 1">男</template>
+                            <template v-else="">女</template>
+                        </span>
+                    </el-col>
+                </el-row>
+                <el-row class="panel-content-item">
+                    <el-col :span="4">
+                        <label>年龄：</label>
+                    </el-col>
+                    <el-col :span="12">
+                        <span v-if="edit">
+                            <el-input v-model.number="detail_form.age" size="small" :placeholder="detail.age"></el-input>
+                        </span>
+                        <span v-else="">
+                            <label>{{detail.age}}</label>
+                        </span>
                     </el-col>
                 </el-row>
                 <el-row class="panel-content-item">
@@ -79,7 +105,12 @@
                         <label>手机号：</label>
                     </el-col>
                     <el-col :span="12">
-                        {{detail.phone}}
+                        <span v-if="edit">
+                            <el-input v-model="detail_form.phone" size="small" :placeholder="detail.phone"></el-input>
+                        </span>
+                        <span v-else="">
+                            <label>{{detail.phone}}</label>
+                        </span>
                     </el-col>
                 </el-row>
                 <el-row class="panel-content-item">
@@ -95,10 +126,18 @@
                         <label>简介：</label>
                     </el-col>
                     <el-col :span="12">
-                        <template v-if="detail.describe === ''">这个人很懒，什么也没有写</template>
-                        <template v-else="">{{detail.describe}}</template>
+                        <span v-if="edit">
+                            <el-input type="textarea" v-model="detail_form.describe" size="small" :placeholder="detail.describe" rows="6"></el-input>
+                        </span>
+                        <span v-else="">
+                            <template v-if="detail.describe === ''">这个人很懒，什么也没有写</template>
+                            <template v-else="">{{detail.describe}}</template>
+                        </span>
                     </el-col>
                 </el-row>
+                <div style="text-align:right" v-if="edit">
+                    <el-button type="primary" @click="updateUserDetail">保存</el-button>
+                </div>
             </div>
           </template>
           <template v-else-if="active_index === '2'">
@@ -151,6 +190,10 @@ export default ({
             coin_logs: [],
             headimg_dialog_visible: false,
             img_url: '',
+            edit: false,
+            detail_form: {},
+            gender: '',
+            update: false
         }
     },
     created () {
@@ -161,6 +204,14 @@ export default ({
     watch: {
         file_list (val, oldVal) {
             console.log(val, oldVal)
+        },
+        detail_form (val, oldVal) {
+            console.log(val, oldVal)
+            this.update = true
+        },
+        gender (val, oldVal) {
+            console.log(val, oldVal)
+            this.update = true
         }
     },
     methods: {
@@ -237,8 +288,9 @@ export default ({
             upload(data).then(response => {
                 console.log(response)
                 if (response.data.code === 0) {
-                    this.detail.head_img_url = response.data.data.down_url
-                    this.updateUserDetail(this.detail)
+                    this.detail_form = this.detail
+                    this.detail_form.head_img_url = response.data.data.down_url
+                    this.updateUserDetail()
                 } else {
                      this.$message.error('上传失败')
                 }
@@ -247,11 +299,16 @@ export default ({
                 this.$message.error('请求错误')
             })
         },
-        updateUserDetail (data) {
-            console.log(data)
-            updateDetail(data).then(response => {
+        updateUserDetail () {
+            if (!this.update) {
+                this.edit = false
+                return
+            }
+            this.detail_form.gender = parseInt(this.gender)
+            console.log(this.detail_form)
+            updateDetail(this.detail_form).then(response => {
                 if (response.data.code === 0) {
-                    this.$message.success('上传成功')
+                    this.$message.success('更新成功')
                     this.headimg_dialog_visible = false
                     this.getUpdatedDetail()
                 } else {
@@ -261,6 +318,8 @@ export default ({
                 console.log(error)
                 this.$message.error('请求错误')
             })
+            this.edit = false
+            this.update = false
         }
     }
 })

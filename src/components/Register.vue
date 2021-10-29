@@ -53,9 +53,11 @@ export default {
     },
     register () {
       // var that = this
-      var genderFlag = false
+      var genderFlag
       if (this.form.gender === '男') {
-        genderFlag = true
+        genderFlag = 1
+      } else {
+        genderFlag = 2
       }
       var data = {
         login_name: this.form.login_name,
@@ -69,7 +71,7 @@ export default {
             this.$message.success('注册成功')
             this.$router.push({path: '/'})
           } else {
-            this.$message.error('请求错误')
+            this.$message.error('参数错误')
           }
       }).catch(error => {
         console.log(error)

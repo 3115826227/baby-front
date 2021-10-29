@@ -10,7 +10,7 @@ export function addSpace(data) {
 
 export function getSpaces(req) {
     return request({
-        url: '/space/space?' + 'page=' + req.page + '&page_size=' + req.pageSize,
+        url: '/space/space?' + 'page=' + req.page + '&page_size=' + req.pageSize + '&visitor_type=' + req.visitor_type,
         method: 'get'
     })
 }

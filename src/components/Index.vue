@@ -23,7 +23,7 @@
                     <span>{{item.name}}</span>
                   </el-breadcrumb-item>
                 </el-breadcrumb>
-                <Content></Content>
+                <Content :websocketClient = "websock" :websocketMessage="websocketMessage"></Content>
             </el-main>
         </el-container>
     </el-container>
@@ -45,12 +45,13 @@ export default {
       value: new Date(),
       levelList: null,
       detail: {},
-      privateMessageUnreadNumber: 1
+      privateMessageUnreadNumber: 1,
+      websock: null,
+      websocketMessage: {}
     }
   },
   computed: {
     routers () {
-      console.log(this.$router.options.routes)
       return this.$router.options.routes[0].children
     }
   },
@@ -76,13 +77,17 @@ export default {
           window.location.href = '/'
       }
       detail().then(response => {
-          this.detail = response.data.data
-          if (response.data.data.verify === true) {
-            this.verify = '已认证'
+          if (response.data.code === 0) {
+            this.detail = response.data.data
+            if (response.data.data.verify === true) {
+              this.verify = '已认证'
+            } else {
+              this.verify = ''
+            }
+            sessionStorage.setItem('detail', JSON.stringify(this.detail))
           } else {
-            this.verify = ''
+            window.location.href = '/'
           }
-          sessionStorage.setItem('detail', JSON.stringify(this.detail))
         })
         .catch(error => {
           console.log(error)
@@ -101,11 +106,55 @@ export default {
     },
     toUser() {
       window.location.href = "/user"
+    },
+    initWebSocket () { // 初始化weosocket
+      const wsuri = process.env.VUE_APP_BASE_API.replace('http', 'ws') + '/connect/websocket?token=' + sessionStorage.getItem('token')
+      this.websock = new WebSocket(wsuri)
+      this.websock.onmessage = this.websocketonmessage
+      this.websock.onopen = this.websocketonopen
+      this.websock.onerror = this.websocketonerror
+      this.websock.onclose = this.websocketclose
+    },
+    websocketonopen () { // 连接建立之后执行send方法发送数据
+      console.log('连接成功')
+      this.connect = true
+    },
+    websocketonerror () { // 连接建立失败重连
+      // this.initWebSocket()
+    },
+    websocketonmessage (e) { // 数据接收
+      let redata = JSON.parse(e.data)
+      console.log(redata)
+      let msgTip = '收到一条新的'
+      switch (redata.ws_message_notify_type) {
+      case 1:
+        msgTip += '私信消息通知'
+        break
+      case 2:
+        msgTip += '会话消息通知'
+        break
+      case 3:
+        msgTip += '空间消息通知'
+        break
+      }
+      if (redata.ws_message.send.account_id != sessionStorage.getItem('user_id')) {
+        this.$notify.success({
+          title: '消息',
+          message: msgTip,
+          showClose: false
+        });
+      }
+      this.websocketMessage = redata
+    },
+    websocketclose (e) { // 关闭
+      console.log('断开连接', e)
+      this.connect = false
     }
   },
   created () {
     this.getBreadcrumb()
     this.getDetail()
+    this.initWebSocket()
   }
 }
 </script>
