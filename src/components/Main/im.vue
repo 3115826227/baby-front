@@ -860,11 +860,13 @@ export default {
                   }
                 }
             }
+            break;
           case 4:
             this.user_inputting = {
               session_id: redata.ws_message.session_message.session.session_id,
               inputting: redata.ws_message.session_message.session.inputting
             }
+            break;
           case 5:
           case 6:
         }
