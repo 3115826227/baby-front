@@ -143,17 +143,25 @@
                               <span v-if="reply.like_total">{{reply.like_total}}</span>
                             </el-col>
                             <el-col :span="2">
-                              <span style="font-size:13px;color:gray" @click="reply.open_comment = !reply.open_comment">回复</span>
+                              <span style="font-size:13px;color:gray"><a @click="reply.open_reply = !reply.open_reply">回复</a></span>
+                            </el-col>
+                          </el-row>
+                          <el-row v-if="reply.open_reply">
+                            <el-col :span="21">
+                              <el-input type="text" size="mini" v-model="reply.reply_content" placeholder="回复一下什么吧"></el-input>
+                            </el-col>
+                            <el-col :span="3" style="text-align:right">
+                              <el-button type="primary" size="mini" @click="addReply(item.id, reply.id, reply.reply_content)">发布</el-button>
                             </el-col>
                           </el-row>
                           <HR SIZE=1 />
                         </div>
                         <el-row>
                           <el-col :span="21">
-                            <el-input type="text" size="mini" v-model="reply_form.content" placeholder="回复一下什么吧"></el-input>
+                            <el-input type="text" size="mini" v-model="comment.reply_content" placeholder="回复一下什么吧"></el-input>
                           </el-col>
                           <el-col :span="3" style="text-align:right">
-                            <el-button type="primary" size="mini" @click="addReply(item.id, comment.id)">发布</el-button>
+                            <el-button type="primary" size="mini" @click="addReply(item.id, comment.id, comment.reply_content)">发布</el-button>
                           </el-col>
                         </el-row>
                       </div>
@@ -161,10 +169,10 @@
                     </div>
                     <el-row v-if="item.open_comment === true">
                       <el-col :span="21">
-                        <el-input type="text" size="mini" v-model="comment_form.content" placeholder="评论些什么吧"></el-input>
+                        <el-input type="text" size="mini" v-model="item.reply_content" placeholder="评论些什么吧"></el-input>
                       </el-col>
                       <el-col :span="3" style="text-align:right">
-                        <el-button type="primary" size="mini" @click="addComment(item.id)">发布</el-button>
+                        <el-button type="primary" size="mini" @click="addComment(item.id, item.reply_content)">发布</el-button>
                       </el-col>
                     </el-row>
                   </el-card>
@@ -222,7 +230,11 @@ export default {
       }
       getSpaces(req).then(response => {
           if (response.data.code === 0) {
-            this.spaces = response.data.data.list
+            this.spaces = []
+            response.data.data.list.forEach(e => {
+              e.reply_content = ''
+              this.spaces.push(e)
+            });
           } else {
             this.$message.error('请求失败')
           }
@@ -249,10 +261,10 @@ export default {
         this.$message.error('请求出错')
       })
     },
-    addComment (id) {
+    addComment (id, content) {
       var data = {
         space_id: id,
-        comment: this.comment_form.content
+        comment: content
       }
       addComment(data).then(response => {
         if (response.data.code === 0) {
@@ -267,11 +279,11 @@ export default {
         this.$message.error('请求出错')
       })
     },
-    addReply (space_id, parent_id) {
+    addReply (space_id, parent_id, reply_content) {
       var data = {
         space_id: space_id,
         parent_id: parent_id,
-        comment: this.reply_form.content
+        comment: reply_content
       }
       addComment(data).then(response => {
         if (response.data.code === 0) {

@@ -16,6 +16,13 @@ export function session() {
     })
 }
 
+export function sessionDialog() {
+    return request({
+        url: 'im/session/dialog',
+        method: 'get'
+    })
+}
+
 export function sessionDetail(id) {
     return request({
         url: '/im/session/detail?session_id=' + id,
@@ -47,8 +54,31 @@ export function addFriend(data) {
 
 export function friends() {
     return request({
-        url: '/im/session/friend',
+        url: '/im/session/friends',
         method: 'get'
+    })
+}
+
+export function findSessionByFriend(friend) {
+    return request({
+        url: '/im/session/friend?friend=' + friend,
+        method: 'get'
+    })
+}
+
+export function addOperator(data) {
+    return request({
+        url: '/im/session/operator',
+        method: 'post',
+        data
+    })
+}
+
+export function confirmOperator (data) {
+    return request({
+        url: '/im/session/operator/confirm',
+        method: 'patch',
+        data
     })
 }
 
@@ -63,6 +93,21 @@ export function deleteOpt(id) {
     return request({
         url: '/im/session/operator?operator_id=' + id,
         method: 'delete'
+    })
+}
+
+export function userManage() {
+    return request({
+        url: '/im/session/manage',
+        method: 'get'
+    })
+}
+
+export function updateUserManage(data) {
+    return request({
+        url: '/im/session/manage',
+        method: 'patch',
+        data
     })
 }
 

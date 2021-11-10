@@ -4,7 +4,7 @@
           <div id="im-list-tabs">
              <el-tabs v-model="activeName" type="border-card" @tab-click="handleClick" stretch style="height:600px">
               <el-tab-pane label="消息" name="session">
-                <el-card class="border-card" v-for="(item, index) in sessions" :key="index" style="margin:2% 0">
+                <el-card class="border-card" v-for="(item, index) in sessionDialogs" :key="index" style="margin:2% 0">
                   <div @click="selectSession(item.session_id)">
                   <el-row>
                     <el-col :span="20">
@@ -47,7 +47,7 @@
                   </el-col>
                 </el-row>
                 <el-card class="border-card" v-for="(item, index) in friends" :key="index" style="margin:2% 0" shadow="hover">
-                  <div>
+                  <div @click="findSessionByFriend(item.account_id)">
                     {{item.remark}}
                   </div>
                 </el-card>
@@ -65,16 +65,16 @@
                   </el-col>
                 </el-row>
                 <el-card class="border-card" v-for="(item, index) in sessions" :key="index" style="margin:2% 0" shadow="hover">
-                  <div>
+                  <div @click="selectSession(item.session_id)">
                     {{item.name}}
                   </div>
                 </el-card>
               </el-tab-pane>
               <el-tab-pane label="通知" name="notify">
                 <el-card class="border-card" v-for="(item, index) in operators" :key="index" style="margin:2% 0" shadow="hover">
-                  <div @click="selectOperator(item)">
+                  <div @click="selectOperator(item)" style="font-size:14px;">
                     <el-row>
-                      <el-col :span="3">
+                      <el-col :span="4">
                         <template v-if="item.origin.account_id === user_id">
                           已发送
                         </template>
@@ -87,7 +87,7 @@
                           </template>
                         </template>
                       </el-col>
-                      <el-col :span="18">
+                      <el-col :span="16">
                         <template v-if="item.opt_type === 1">
                           {{item.origin.username}}请求添加您好友
                         </template>
@@ -102,6 +102,23 @@
                     </el-row>
                   </div>
                 </el-card>
+              </el-tab-pane>
+              <el-tab-pane label="管理" name="manage" style="font-size:14px;padding:3%">
+                <el-row>
+                  <el-col :span="16">
+                    <span>添加我为好友是否需要确认：</span>
+                  </el-col>
+                  <el-col :span="8">
+                      <el-radio-group v-model="userManage.add_friend_permission_type">
+                        <el-radio :label="1">是</el-radio>
+                        <el-radio :label="0">否</el-radio>
+                      </el-radio-group>
+                      <!-- <el-switch v-model="userManage.add_friend_permission_type"></el-switch> -->
+                  </el-col>
+                </el-row>
+                <div style="text-align:center;margin-top:10%">
+                  <el-button type="primary" size="small" @click="updateUserManage">修改</el-button>
+                </div>
               </el-tab-pane>
             </el-tabs>
           </div>
@@ -118,6 +135,7 @@
                         <span v-else-if="session.session_type === 1">讨论组</span>
                         <span v-else-if="session.session_type === 2">群会话</span>
                     </el-tag>
+                    <span v-if="user_inputting.inputting && user_inputting.session_id === session.session_id" style="color:gray">对方正在输入</span>
                   </div>
                   <div id="im-messages" style="height:380px;overflow:auto">
                     <template v-if="!noMoreMessage">
@@ -177,7 +195,7 @@
             </div>
           </div>
           <div v-else-if="panel === 2">
-            <el-card class="border-card" style="height:600px">
+            <el-card class="border-card" style="height:600px;">
               <div slot="header">
                 <span>通知</span>
                   <template v-if="operator.origin.account_id === user_id">
@@ -216,8 +234,8 @@
                 </el-row>
                 <div style="text-align:center;margin:2% 0">
                   <template v-if="operator.confirm === 0">
-                    <el-button type="primary">同意</el-button>
-                    <el-button type="danger">拒绝</el-button>
+                    <el-button type="primary" @click="confirmOperator({operator_id:operator.operator_id,confirm:true})">同意</el-button>
+                    <el-button type="danger" @click="confirmOperator({operator_id:operator.operator_id,confirm:false})">拒绝</el-button>
                   </template>
                   <template v-else-if="operator.confirm === 1">
                     <span style="color:green">已同意</span>
@@ -370,7 +388,7 @@
     </div>
 </template>
 <script>
-import { addSession, session, sessionDetail, sessionMessages,readstatus, friends, addFriend, operators, deleteOpt, createWebRTC } from '@/api/im'
+import { addSession, session, sessionDialog, sessionDetail, sessionMessages,readstatus, friends, findSessionByFriend, addFriend, addOperator, confirmOperator, operators, deleteOpt, userManage, updateUserManage, createWebRTC } from '@/api/im'
 import { query } from '@/api/user'
 
 export default {
@@ -411,6 +429,7 @@ export default {
       noMoreMessage: false,
       operator: {},
       send_form: {},
+      sessionDialogs: [],
       sessions: [],
       messages: [],
       operators: [],
@@ -423,6 +442,7 @@ export default {
       wxImgList: ['微笑', '撇嘴', '色', '发呆', '得意', '流泪', '害羞', '闭嘴', '睡', '大哭', '尴尬', '发怒', '调皮', '呲牙', '惊讶', '难过', '酷', '冷汗', '抓狂', '吐', '偷笑', '可爱', '白眼', '傲慢', '饥饿', '困', '惊恐', '流汗', '憨笑', '大兵', '奋斗', '咒骂', '疑问', '嘘', '晕', '折磨', '衰', '骷髅', '敲打', '再见', '擦汗', '抠鼻', '鼓掌', '糗大了', '坏笑', '左哼哼', '右哼哼', '哈欠', '鄙视', '委屈', '快哭了', '阴险', '亲亲', '吓', '可怜', '菜刀', '西瓜', '啤酒', '篮球', '乒乓', '咖啡', '饭', '猪头', '玫瑰', '凋谢', '示爱', '爱心', '心碎', '蛋糕', '闪电', '炸弹', '刀', '足球', '瓢虫', '便便', '月亮', '太阳', '礼物', '拥抱', '强', '弱', '握手', '胜利', '抱拳', '勾引', '拳头', '差劲', '爱你', 'NO', 'OK', '爱情', '飞吻', '跳跳', '发抖', '怄火', '转圈', '磕头', '回头', '跳绳', '挥手', '激动', '街舞', '献吻', '左太极', '右太极'],
       wxImgVisisable: false,
       file: {},
+      userManage: {},
       videoVisible: false,
       remoteSession: '',
       localSession: '',
@@ -440,6 +460,10 @@ export default {
             facingMode: "environment"
         }
       },
+      user_inputting: {
+        session_id: 0,
+        inputting: false
+      }
     }
   },
   watch: {
@@ -450,8 +474,10 @@ export default {
   created () {
     this.init()
     this.getSessions()
+    this.getSessionDialog()
     this.getFriends()
     this.getOperators()
+    this.getUserManage()
     this.initWebSocket()
   },
   methods: {
@@ -585,18 +611,41 @@ export default {
       var that = this
       session().then(response => {
         if (response.data.code === 0) {
-          that.sessions = response.data.data.sessions
+          that.sessions = response.data.data.list
         }
       })
         .catch(error => {
           console.log(error)
         })
     },
-    getOperators () {
+    getSessionDialog () {
       var that = this
-      operators().then(function (response) {
+      sessionDialog().then(response => {
         if (response.data.code === 0) {
-          that.operators = response.data.data.operators
+          that.sessionDialogs = response.data.data.list
+        }
+      })
+        .catch(error => {
+          console.log(error)
+        })
+    },
+    addOperator (data) {
+      addOperator(data).then(response => {
+        if (response.data.code === 0) {
+          this.$message.success('好友请求已发出')
+        } else {
+          this.$message.error('请求错误')
+        }
+      })
+      .catch(error => {
+        console.log(error)
+        this.$message.error('请求错误')
+      })
+    },
+    getOperators () {
+      operators().then(response => {
+        if (response.data.code === 0) {
+          this.operators = response.data.data.operators
         }
       })
         .catch(error => {
@@ -624,7 +673,7 @@ export default {
           this.sessions[i].unread = 0
           readstatus(sessionId).then(function (response) {
             if (response.data.code === 0) {
-              that.getSessions()
+              that.getSessionDialog()
             }
           })
             .catch(function (error) {
@@ -682,35 +731,55 @@ export default {
           console.log(error)
         })
     },
-    deleteOperator (operatorId) {
-      var that = this
-      deleteOpt(operatorId).then(function (response) {
+    confirmOperator (data) {
+      confirmOperator(data).then(response => {
         if (response.data.code === 0) {
-          that.$message.success('删除成功')
-          that.getOperators()
+          this.$message.success('回复成功')
+          this.getOperators()
+        } else {
+          this.$message.error('回复失败')
         }
       })
         .catch(function (error) {
           console.log(error)
+          this.$message.error('请求错误')
+        })
+    },
+    deleteOperator (operatorId) {
+      deleteOpt(operatorId).then(response => {
+        if (response.data.code === 0) {
+          this.$message.success('删除成功')
+          this.getOperators()
+        } else {
+          this.$message.error('删除失败')
+        }
+      })
+        .catch(function (error) {
+          console.log(error)
+          this.$message.error('请求错误')
         })
     },
     addFriend () {
-      var that = this
       addFriend({
         account_id: this.query_user.account_id
-      })
-        .then(function (response) {
+      }).then(response => {
           if (response.data.code === 0) {
-            that.$message.success('添加成功')
-            that.getUser(this.query_user.accountId)
-            that.getFriends()
+            this.$message.success('添加成功')
+            this.getUser(this.query_user.accountId)
+            this.getFriends()
+          } else if (response.data.code === 20010) {
+            let data = {
+              receive: this.query_user.account_id,
+              opt_type: 1
+            }
+            this.addOperator(data)
           } else {
-            that.$message.error('请求出错')
+            this.$message.error('请求出错')
           }
         })
-        .catch(function (error) {
+        .catch(error => {
           console.log(error)
-          that.$message.error('请求出错')
+          this.$message.error('请求出错')
         })
     },
     judgeIsConnect () {
@@ -745,34 +814,59 @@ export default {
           console.log(error)
         })
     },
+    findSessionByFriend (friend) {
+      findSessionByFriend(friend).then(response => {
+        if (response.data.code === 0) {
+          this.selectSession(response.data.data)
+        }
+      })
+        .catch(error => {
+          console.log(error)
+        })
+    },
     initWebSocket () { // 初始化weosocket
       this.websock = this.websocketClient
     },
     receiveMessage (redata) { // 数据接收
       if (redata.ws_message_notify_type === 2) {
-        switch (redata.ws_message.session_message.session_message_type) {
-          case 1:
-          case 2:
-          case 3:
-            var newMessage = redata.ws_message.session_message.message
-            for (var i = 0; i < this.sessions.length; i++) {
-              if (this.sessions[i].session_id === newMessage.session_id) {
-                this.sessions[i].latest_message = newMessage
-                // 接收到的消息发送者不是自己，并且当前面板的不是接收到消息的会话
-                if (newMessage.send.account_id !== this.user_id) {
-                  if (this.messages.length === 0 || this.messages[0].session_id !== newMessage.session_id) {
-                    // 该会话未读条数加1
-                    this.sessions[i].unread += 1
+        switch (redata.ws_message.ws_message_type) {
+          case 0:
+            switch (redata.ws_message.session_message.session_message_type) {
+              case 1:
+              case 2:
+              case 3:
+                var newMessage = redata.ws_message.session_message.message
+                for (var i = 0; i < this.sessionDialogs.length; i++) {
+                  if (this.sessionDialogs[i].session_id === newMessage.session_id) {
+                    let currentSession = this.sessionDialogs[i]
+                    currentSession.latest_message = newMessage
+                    // this.sessions[i].latest_message = newMessage
+                    // 接收到的消息发送者不是自己，并且当前面板的不是接收到消息的会话
+                    if (newMessage.send.account_id !== this.user_id) {
+                      if (this.messages.length === 0 || this.messages[0].session_id !== newMessage.session_id) {
+                        // 该会话未读条数加1
+                        currentSession.unread += 1
+                      }
+                    }
+                    this.sessionDialogs.splice(i, 1)
+                    this.sessionDialogs.unshift(currentSession)
+                    break
                   }
                 }
-              }
+                if (this.messages.length !== 0) {
+                  if (this.messages[0].session_id === newMessage.session_id) {
+                    this.messages.push(newMessage)
+                    this.scrollToBottom()
+                  }
+                }
             }
-            if (this.messages.length !== 0) {
-              if (this.messages[0].session_id === newMessage.session_id) {
-                this.messages.push(newMessage)
-                this.scrollToBottom()
-              }
+          case 4:
+            this.user_inputting = {
+              session_id: redata.ws_message.session_message.session.session_id,
+              inputting: redata.ws_message.session_message.session.inputting
             }
+          case 5:
+          case 6:
         }
       }
     },
@@ -842,6 +936,31 @@ export default {
         }
       }
       this.chat = list
+    },
+    getUserManage () {
+      userManage().then(response => {
+        if (response.data.code === 0) {
+          this.userManage = response.data.data
+        }
+      })
+        .catch(error => {
+          console.log(error)
+        })
+    },
+    updateUserManage () {
+      console.log(this.userManage)
+      updateUserManage(this.userManage).then(response => {
+        if (response.data.code === 0) {
+          this.$message.success('更新成功')
+          this.getUserManage()
+        } else {
+          this.$message.error('更新失败')
+        }
+      })
+        .catch(error => {
+          console.log(error)
+          this.$message.error('请求错误')
+        })
     },
     imgClick (index) {
       this.wxImgVisisable = false
