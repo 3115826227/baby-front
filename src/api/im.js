@@ -23,6 +23,13 @@ export function sessionDialog() {
     })
 }
 
+export function deleteSessionDialog(session_id) {
+    return request({
+        url: 'im/session/dialog?session_id=' + session_id,
+        method: 'delete'
+    })
+}
+
 export function sessionDetail(id) {
     return request({
         url: '/im/session/detail?session_id=' + id,
@@ -108,6 +115,34 @@ export function updateUserManage(data) {
         url: '/im/session/manage',
         method: 'patch',
         data
+    })
+}
+
+export function getReadUsers(req) {
+    return request({
+        url: 'im/session/message/read_users?session_id=' + req.session_id + '&message_id=' + req.message_id,
+        method: 'get'
+    })
+}
+
+export function withDrawnMessage (req) {
+    return request({
+        url: 'im/session/message/with_drawn?session_id=' + req.session_id + '&message_id=' + req.message_id,
+        method: 'get'
+    })
+}
+
+export function deleteMessage (req) {
+    return request({
+        url: 'im/session/message?session_id=' + req.session_id + '&message_ids=' + req.message_id,
+        method: 'delete'
+    })
+}
+ 
+export function flushMessage (req) {
+    return request({
+        url: 'im/session/message/flush?session_id=' + req.session_id,
+        method: 'delete'
     })
 }
 

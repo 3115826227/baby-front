@@ -91,6 +91,7 @@ export default {
         })
         .catch(error => {
           console.log(error)
+          window.location.href = '/'
         })
     },
     logout () {

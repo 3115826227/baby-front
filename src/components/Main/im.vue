@@ -3,8 +3,10 @@
         <div id="im-list">
           <div id="im-list-tabs">
              <el-tabs v-model="activeName" type="border-card" @tab-click="handleClick" stretch style="height:600px">
-              <el-tab-pane label="消息" name="session">
-                <el-card class="border-card" v-for="(item, index) in sessionDialogs" :key="index" style="margin:2% 0">
+              <el-tab-pane label="消息" name="session" style="height:540px;overflow:auto">
+                <el-card class="border-card" v-for="(item, index) in sessionDialogs" :key="index" style="margin:2% 0;">
+                  <el-row>
+                    <el-col :span="20">
                   <div @click="selectSession(item.session_id)">
                   <el-row>
                     <el-col :span="20">
@@ -20,21 +22,44 @@
                       </el-badge>
                     </el-col>
                   </el-row>
-                  <el-row style="color:gray;font-size:14px;" v-if="item.latest_message">
-                    <el-col :span="14">
-                      <span v-if="item.latest_message.send.account_id !== user_id">
+                  <el-row style="color:gray;font-size:14px;margin-top:2%" v-if="item.latest_message">
+                    <el-col :span="12">
+                      <span v-if="item.latest_message.message_type !== 3">
+                        <span v-if="item.latest_message.send.account_id !== user_id">
                         <span v-if="item.latest_message.send.remark === ''">{{item.latest_message.send.username}}</span>
                         <span v-else="">{{item.latest_message.send.remark}}</span>
                         ：</span>{{item.latest_message.content}}
+                      </span>
+                      <span v-else="">
+                        <span v-if="item.latest_message.send.account_id !== user_id">
+                          <span v-if="item.latest_message.send.remark === ''">{{item.latest_message.send.username}}</span>
+                          <span v-else="">{{item.latest_message.send.remark}}</span>
+                        </span>
+                        <span v-else="">您</span>撤回了一条消息
+                      </span>
                     </el-col>
-                    <el-col :span="10" style="text-align:right">
+                    <el-col :span="12" style="text-align:right" v-if="item.latest_message.send_timestamp">
                       {{timestampToTime(item.latest_message.send_timestamp)}}
                     </el-col>
                   </el-row>
-                  </div>
+                  </div>    
+                    </el-col>
+                    <el-col :span="4" style="text-align:right;font-size:13px;padding-left:4%">
+                      <!-- <div>
+                        <el-button size="mini" type="warning">置顶</el-button>
+                      </div>
+                      <div>
+                        <el-button size="mini" type="danger">删除</el-button>
+                      </div> -->
+                      <!-- <div style="padding:7% 0%;border-radius:5px;background-color:#e6a23c;text-align:center;margin-bottom:5%;">置顶</div> -->
+                      <div style="padding:35% 20%;border-radius:5px;background-color:#f56c6c;text-align:center;color:white" @click="deleteSessionDialog(item.session_id)">
+                        删除
+                      </div>
+                    </el-col>
+                  </el-row>
                 </el-card>
               </el-tab-pane>
-              <el-tab-pane label="好友" name="friend">
+              <el-tab-pane label="好友" name="friend" style="height:530px;overflow:auto">
                 <el-row style="margin:2% 0">
                   <el-col :span="15" style="padding-right:4%">
                     <el-input type="text" size="small" />
@@ -52,7 +77,7 @@
                   </div>
                 </el-card>
               </el-tab-pane>
-              <el-tab-pane label="会话" name="group">
+              <el-tab-pane label="会话" name="group" style="height:530px;overflow:auto">
                 <el-row style="margin:2% 0">
                   <el-col :span="15" style="padding-right:4%">
                     <el-input type="text" size="small" />
@@ -70,7 +95,7 @@
                   </div>
                 </el-card>
               </el-tab-pane>
-              <el-tab-pane label="通知" name="notify">
+              <el-tab-pane label="通知" name="notify" style="height:530px;overflow:auto">
                 <el-card class="border-card" v-for="(item, index) in operators" :key="index" style="margin:2% 0" shadow="hover">
                   <div @click="selectOperator(item)" style="font-size:14px;">
                     <el-row>
@@ -129,13 +154,28 @@
               <div id="im-panel">
                 <el-card class="box-card">
                   <div slot="header">
-                    <span>{{session.name}} </span>
-                    <el-tag size="mini">
-                      <span v-if="session.session_type === 0">双人会话</span>
-                        <span v-else-if="session.session_type === 1">讨论组</span>
-                        <span v-else-if="session.session_type === 2">群会话</span>
-                    </el-tag>
-                    <span v-if="user_inputting.inputting && user_inputting.session_id === session.session_id" style="color:gray">对方正在输入</span>
+                    <el-row>
+                      <el-col :span="20">
+                        <span>{{session.name}} </span>
+                        <el-tag size="mini">
+                          <span v-if="session.session_type === 0">双人会话</span>
+                          <span v-else-if="session.session_type === 1">讨论组</span>
+                          <span v-else-if="session.session_type === 2">群会话</span>
+                        </el-tag>
+                        <span v-if="session.session_type === 0" style="margin-left:1%">
+                          <el-tag size="mini" type="info" v-if="current_friend_status === 1">
+                            <span>离线</span>
+                          </el-tag>
+                          <el-tag size="mini" type="success" v-if="current_friend_status === 11">
+                            <span>电脑在线</span>
+                          </el-tag>
+                        </span>
+                        <span v-if="user_inputting.inputting && user_inputting.session_id === session.session_id" style="color:gray;font-size:13px;margin-left:1%">对方正在输入</span>
+                      </el-col>
+                      <el-col :span="4" style="text-align:right;font-size:14px;font-weight:500;color:#F56C6C">
+                        <span @click="flushMessage(session)">清空消息</span>
+                      </el-col>
+                    </el-row>
                   </div>
                   <div id="im-messages" style="height:380px;overflow:auto">
                     <template v-if="!noMoreMessage">
@@ -151,32 +191,77 @@
                     <template>
                       <el-row v-for="(item,index) in messages" :key="index">
                         <div v-if="item.send.account_id === user_id">
-                          <el-row>
+                          <div v-if="item.message_type !== 3">
+                            <el-row>
                             <el-col :span="12" style="padding:1% 0;text-align:right;margin-left:50%">
-                              <span style="font-size:12px;color:gray;margin-right:2%">
-                                {{timestampToTime(item.send_timestamp)}}
+                              <span style="margin-right:1%;font-size:12px">
+                                <span style="margin-right:1%;color:#f56c6c" @click="deleteMessage(item)">删除</span>
+                                <span style="margin-right:1%;color:#e6a23c" @click="withDrawnMessage(item)">撤回</span>
+                                <span v-if="item.read_user_total + 1 === session.joins.length" style="color:gray">
+                                  <i class="el-icon-success"></i>
+                                </span>
+                                <span v-else="">
+                                  <el-popover
+                                    placement="bottom"
+                                    width="200"
+                                    trigger="click"
+                                    >
+                                    <el-tabs type="border-card" stretch>
+                                      <el-tab-pane label="已读">
+                                        <el-card v-for="item in message_read_users.read_users" :key="item.account_id">
+                                          {{item.username}}
+                                        </el-card>
+                                      </el-tab-pane>
+                                      <el-tab-pane label="未读">
+                                        <el-card v-for="item in message_read_users.unread_users" :key="item.account_id">
+                                          {{item.username}}
+                                        </el-card>
+                                      </el-tab-pane>
+                                    </el-tabs>
+                                    <div class="read-total-number" slot="reference" @click="getReadUsers(item)"></div>
+                                  </el-popover>
+                                </span>  
                               </span>
                               <span style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
                                 {{item.content}}
                               </span>
                             </el-col>
-                          </el-row>
+                            </el-row>
+                            <div style="text-align:right">
+                              <span style="font-size:12px;color:gray;">
+                                  {{timestampToTime(item.send_timestamp)}}
+                              </span>
+                            </div>
+                          </div>
+                          <div v-else="" style="text-align:center;color:gray;font-size:13px;margin-top:1%;margin-bottom:1%">
+                            您撤回了一条消息
+                          </div>
                         </div>
                         <div v-else="">
-                          <div style="font-size:12px;color:gray" @click="openFriendDrawer(item.send.account_id)">
+                          <div v-if="item.message_type != 3">
+                            <div style="font-size:12px;color:gray" @click="openFriendDrawer(item.send.account_id)">
+                              <span v-if="item.send.remark !== ''">{{item.send.remark}}</span>
+                              <span v-else="">{{item.send.username}}</span>
+                            </div>
+                            <el-row>
+                              <el-col :span="10" style="padding:1% 0;">
+                                <span style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
+                                  {{item.content}}
+                                </span>
+                                <span style="margin-left:1%;color:#f56c6c;font-size:12px;" @click="deleteMessage(item)">删除</span>
+                              </el-col>
+                            </el-row>
+                            <div style="">
+                                <span style="font-size:12px;color:gray;">
+                                  {{timestampToTime(item.send_timestamp)}}
+                                </span>
+                            </div>
+                          </div>
+                          <div v-else="" style="text-align:center;color:gray;font-size:13px;margin-top:1%;margin-bottom:1%">
                             <span v-if="item.send.remark !== ''">{{item.send.remark}}</span>
                             <span v-else="">{{item.send.username}}</span>
+                            撤回了一条消息
                           </div>
-                          <el-row>
-                            <el-col :span="10" style="padding:1% 0;">
-                              <span style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
-                                {{item.content}}
-                              </span>
-                              <span style="font-size:12px;color:gray;margin-left:2%">
-                                {{timestampToTime(item.send_timestamp)}}
-                              </span>
-                            </el-col>
-                          </el-row>
                         </div>
                       </el-row>
                     </template>
@@ -185,10 +270,10 @@
               </div>
               <div id="im-send" style="text-align:right">
                 <div style="margin:1% 0">
-                  <el-input type="textarea" v-model="send_form.content" rows="4" style="width:68%;"></el-input>
+                  <el-input type="textarea" v-model="send_form_content" rows="4" style="width:68%;"></el-input>
                 </div>
                 <div>
-                  <el-button type="success" @click="createVideo">发起视频</el-button>
+                  <!-- <el-button type="success" @click="createVideo">发起视频</el-button> -->
                   <el-button type="primary" @click="send">发送</el-button>
                 </div>
               </div>
@@ -388,7 +473,7 @@
     </div>
 </template>
 <script>
-import { addSession, session, sessionDialog, sessionDetail, sessionMessages,readstatus, friends, findSessionByFriend, addFriend, addOperator, confirmOperator, operators, deleteOpt, userManage, updateUserManage, createWebRTC } from '@/api/im'
+import { addSession, session, sessionDialog, deleteSessionDialog, sessionDetail, sessionMessages,readstatus, friends, findSessionByFriend, addFriend, addOperator, confirmOperator, operators, deleteOpt, userManage, updateUserManage, getReadUsers, deleteMessage, withDrawnMessage, flushMessage, createWebRTC } from '@/api/im'
 import { query } from '@/api/user'
 
 export default {
@@ -428,7 +513,7 @@ export default {
       },
       noMoreMessage: false,
       operator: {},
-      send_form: {},
+      send_form_content: '',
       sessionDialogs: [],
       sessions: [],
       messages: [],
@@ -463,13 +548,48 @@ export default {
       user_inputting: {
         session_id: 0,
         inputting: false
-      }
+      },
+      current_friend_status: 0,
+      message_read_users: {}
     }
   },
   watch: {
     websocketMessage (val) {
       this.receiveMessage(val)
-    }
+    },
+    send_form_content (val, oldVal) {
+      if (!this.judgeIsConnect()) {
+        return
+      }
+      if (this.session.session_type !== 0) {
+        return
+      }
+      let notify = {
+        ws_message_notify_type: 2,
+        ws_message: {
+          ws_message_type: 4,
+          session_message: {
+            session_message_type: 2,
+            session: {
+              session_id: this.session.session_id,
+              users: this.session.joins
+            },
+          }
+        }
+      }
+      if (val !== '' && oldVal === '' ) {
+        // 开始输入
+        notify.ws_message.session_message.session.inputting = true
+      } else if (val === '' && oldVal !== '') {
+        // 停止输入
+        notify.ws_message.session_message.session.inputting = false
+      } else {
+        return
+      }
+      this.websock.send(JSON.stringify(notify))
+    },
+    deep: true,
+    immediate: true
   },
   created () {
     this.init()
@@ -619,10 +739,25 @@ export default {
         })
     },
     getSessionDialog () {
-      var that = this
       sessionDialog().then(response => {
         if (response.data.code === 0) {
-          that.sessionDialogs = response.data.data.list
+          this.sessionDialogs = response.data.data.list
+        }
+      })
+        .catch(error => {
+          console.log(error)
+        })
+    },
+    deleteSessionDialog (session_id) {
+      deleteSessionDialog(session_id).then(response => {
+        if (response.data.code === 0) {
+          for (let i = 0; i < this.sessionDialogs.length; i++) {
+            if (this.sessionDialogs[i].session_id == session_id) {
+              this.sessionDialogs.splice(i, 1)
+            }
+          }
+        } else {
+          this.$message.error('删除失败')
         }
       })
         .catch(error => {
@@ -687,13 +822,21 @@ export default {
       this.operator = item
     },
     getSessionDetail (sessionId) {
-      var that = this
-      sessionDetail(sessionId).then(function (response) {
+      sessionDetail(sessionId).then(response => {
         if (response.data.code === 0) {
-          that.session = response.data.data
+          this.session = response.data.data
+          let user_id = sessionStorage.getItem('user_id')
+          if (this.session.session_type === 0) {
+            for (var i = 0; i < this.session.joins.length; i++) {
+                if (this.session.joins[i].account_id != user_id) {
+                  this.current_friend_status = this.session.joins[i].online_type
+                  break;
+                }
+            }
+          }
         }
       })
-        .catch(function (error) {
+        .catch(error => {
           console.log(error)
         })
     },
@@ -709,25 +852,25 @@ export default {
       this.getSessionMessages()
     },
     getSessionMessages () {
-      var that = this
-      sessionMessages(this.session_message_req).then(function (response) {
+      this.session.session_id = this.session_message_req.session_id
+      sessionMessages(this.session_message_req).then(response => {
         if (response.data.code === 0) {
-          if (response.data.data.messages.length < that.session_message_req.page_size) {
-            that.noMoreMessage = true
+          if (response.data.data.messages.length < this.session_message_req.page_size) {
+            this.noMoreMessage = true
           } else {
-            that.noMoreMessage = false
+            this.noMoreMessage = false
           }
-          var messages = that.messages
+          var messages = this.messages
           messages.forEach(e => {
             response.data.data.messages.push(e)
           })
-          that.messages = response.data.data.messages
-          if (that.session_message_req.page === 1) {
-            that.scrollToBottom()
+          this.messages = response.data.data.messages
+          if (this.session_message_req.page === 1) {
+            this.scrollToBottom()
           }
         }
       })
-        .catch(function (error) {
+        .catch(error => {
           console.log(error)
         })
     },
@@ -853,11 +996,9 @@ export default {
                     break
                   }
                 }
-                if (this.messages.length !== 0) {
-                  if (this.messages[0].session_id === newMessage.session_id) {
+                if (this.session.session_id === newMessage.session_id) {
                     this.messages.push(newMessage)
                     this.scrollToBottom()
-                  }
                 }
             }
             break;
@@ -869,6 +1010,24 @@ export default {
             break;
           case 5:
           case 6:
+          case 7:
+                newMessage = redata.ws_message.session_message.message
+                for (i = 0; i < this.sessionDialogs.length; i++) {
+                  if (this.sessionDialogs[i].session_id === newMessage.session_id) {
+                    let currentSession = this.sessionDialogs[i]
+                    if (currentSession.latest_message.message_id == newMessage.message_id) {
+                      if (currentSession.latest_message.send === sessionStorage.getItem('user_id')) {
+                        currentSession.latest_message.content = '您撤回了一条消息'
+                      } else {
+                        currentSession.latest_message.content = newMessage.send.username + '撤回了一条消息'
+                      }
+                    }
+                    this.sessionDialogs.splice(i, 1)
+                    this.sessionDialogs.unshift(currentSession)
+                    break
+                  }
+                }
+                this.flushWithDrawnMessage(newMessage.message_id) 
         }
       }
     },
@@ -886,13 +1045,13 @@ export default {
             session_message_type: 3,
             message: {
               session_id: this.session.session_id,
-              content: this.send_form.content
+              content: this.send_form_content
             }
           }
         }
       }
       this.websocketsend(JSON.stringify(actions))
-      this.send_form = {}
+      this.send_form_content = ''
     },
     sleep (time) {
       return new Promise((resolve) => setTimeout(resolve, time));
@@ -915,14 +1074,6 @@ export default {
       .catch(e => {
         console.log(e)
       });
-    },
-    changeSendContent () {
-      let lastChat = this.send_form.content[this.send_form.content.length - 1]
-      if (lastChat === '@' || lastChat === '\n') {
-        if (lastChat === '\n') {
-          this.send()
-        }
-      }
     },
     infoLook ($event) {
       console.log($event)
@@ -964,13 +1115,75 @@ export default {
           this.$message.error('请求错误')
         })
     },
-    imgClick (index) {
-      this.wxImgVisisable = false
-      let imgUrl = 'https://res.wx.qq.com/mpres/htmledition/images/icon/emotion/' + index + '.gif'
-      this.send_form.image = true
-      this.send_form.desc = imgUrl
-      this.send()
-    }
+    // imgClick (index) {
+    //   this.wxImgVisisable = false
+    //   let imgUrl = 'https://res.wx.qq.com/mpres/htmledition/images/icon/emotion/' + index + '.gif'
+    //   this.send_form.image = true
+    //   this.send_form.desc = imgUrl
+    //   this.send()
+    // },
+    getReadUsers (message) {
+      getReadUsers(message).then(response => {
+        if (response.data.code === 0) {
+          this.message_read_users = response.data.data
+        }
+        console.log(this.messageReadUsers)
+      }).catch(error => {
+        console.log(error)
+      })
+    },
+    flushWithDrawnMessage (message_id) {
+      for (let i = 0; i < this.messages.length; i++) {
+        if (this.messages[i].message_id === message_id) {
+          let message = this.messages[i]
+          message.content = ''
+          message.message_type = 3
+          this.messages.splice(i, 1, message)
+        }
+      }
+    },
+    flushDeleteMessage (message_id) {
+      for (let i = 0; i < this.messages.length; i++) {
+        if (this.messages[i].message_id === message_id) {
+          this.messages.splice(i, 1)
+        }
+      } 
+    },
+    deleteMessage (message) {
+      deleteMessage(message).then(response => {
+        if (response.data.code === 0) {
+          this.flushDeleteMessage(message.message_id)
+        } else {
+          this.$message.error('删除失败')
+        }
+      }).catch(error => {
+        console.log(error)
+      })
+    },
+    withDrawnMessage (message) {
+      withDrawnMessage(message).then(response => {
+        if (response.data.code === 0) {
+          this.flushWithDrawnMessage(message.message_id)
+          this.$message.success('撤回成功')
+        } else {
+          this.$message.error('撤回失败')
+        }
+      }).catch(error => {
+        console.log(error)
+      })
+    },
+    flushMessage (session) {
+      flushMessage(session).then(response => {
+        if (response.data.code === 0) {
+          this.messages = []
+          this.$message.error('清空成功')
+        } else {
+          this.$message.error('清空失败')
+        }
+      }).catch(error => {
+        console.log(error)
+      })
+    },
   },
   destroyed () {
     this.websock.close() // 离开路由之后断开websocket连接
@@ -1173,5 +1386,16 @@ ul {
   border-bottom: 1px solid #DCDFE6;
   height:20px;
   font-weight: bolder;
+}
+
+.read-total-number {
+  display: inline-block;
+  border-radius: 18px;
+  width: 10px;
+  height: 10px;
+  border: 1px solid gray;
+  line-height: 1;
+  font-size: 12px;
+  text-align: center;
 }
 </style>
