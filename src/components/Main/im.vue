@@ -28,7 +28,14 @@
                         <span v-if="item.latest_message.send.account_id !== user_id">
                         <span v-if="item.latest_message.send.remark === ''">{{item.latest_message.send.username}}</span>
                         <span v-else="">{{item.latest_message.send.remark}}</span>
-                        ：</span>{{item.latest_message.content}}
+                        ：</span>
+                          <span v-if="item.latest_message.message_type === 0">{{item.latest_message.content}}</span>
+                          <span v-else-if="item.latest_message.message_type === 1">
+                            [文件]
+                          </span>
+                          <span v-else-if="item.latest_message.message_type === 2">
+                            [图片]
+                          </span>
                       </span>
                       <span v-else="">
                         <span v-if="item.latest_message.send.account_id !== user_id">
@@ -138,7 +145,6 @@
                         <el-radio :label="1">是</el-radio>
                         <el-radio :label="0">否</el-radio>
                       </el-radio-group>
-                      <!-- <el-switch v-model="userManage.add_friend_permission_type"></el-switch> -->
                   </el-col>
                 </el-row>
                 <div style="text-align:center;margin-top:10%">
@@ -194,7 +200,7 @@
                           <div v-if="item.message_type !== 3">
                             <el-row>
                             <el-col :span="12" style="padding:1% 0;text-align:right;margin-left:50%">
-                              <span style="margin-right:1%;font-size:12px">
+                              <span style="margin-right:1%;font-size:12px;">
                                 <span style="margin-right:1%;color:#f56c6c" @click="deleteMessage(item)">删除</span>
                                 <span style="margin-right:1%;color:#e6a23c" @click="withDrawnMessage(item)">撤回</span>
                                 <span v-if="item.read_user_total + 1 === session.joins.length" style="color:gray">
@@ -222,8 +228,19 @@
                                   </el-popover>
                                 </span>  
                               </span>
-                              <span style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
+                              <span v-if="item.message_type === 0" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
                                 {{item.content}}
+                              </span>
+                              <div v-else-if="item.message_type === 1"
+                                style="line-height:70px;text-align:center;font-size:14px;display:inline;padding:6% 8%;box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04);border-radius: 5px">
+                                <a :href="item.content" target="_blank">
+                                  <i class="el-icon-document"></i>
+                                  {{item.content.split("/")[item.content.split("/").length-1]}}
+                                </a>
+                              </div>
+                              <span v-else-if="item.message_type === 2" @click="loadBigImage(item.content)">
+                                <!-- <img :src="item.content" width="50px" /> -->
+                                <el-avatar shape="square" :size="60" fit="fill" :src="item.content"></el-avatar>
                               </span>
                             </el-col>
                             </el-row>
@@ -266,6 +283,36 @@
                       </el-row>
                     </template>
                   </div>
+                  <HR></HR>
+                  <div style="height:5px;">
+                  <el-row>
+                    <el-col :span="1">
+                        <el-popover
+                          placement="bottom"
+                          width="400"
+                          trigger="click"
+                          >
+                          <span v-for="(item, index) in wxImgList" :key="index" @click="imgClick(index)">
+                            <img :src="'https://res.wx.qq.com/mpres/htmledition/images/icon/emotion/'+index+'.gif'" />
+                          </span>
+                          <i slot="reference" class="el-icon-circle-plus-outline"></i>
+                        </el-popover>
+                    </el-col>
+                    <el-col :span="1">
+                      <el-upload ref="upload_image" action="#" :auto-upload="false" :show-file-list="false" :on-change="sendImage">
+                          <i class="el-icon-picture-outline"></i>
+                      </el-upload>
+                    </el-col>
+                    <el-col :span="1">
+                      <el-upload ref="upload_file" action="#" :auto-upload="false" :show-file-list="false" :on-change="sendFile">
+                          <i class="el-icon-document"></i>
+                      </el-upload>
+                    </el-col>
+                    <el-col :span="1">
+                      <i class="el-icon-video-camera"></i>
+                    </el-col>
+                  </el-row>
+                </div>
                 </el-card>
               </div>
               <div id="im-send" style="text-align:right">
@@ -470,11 +517,17 @@
           <br/>
           <div id="logs"></div>
         </el-dialog>
+        <el-dialog title="查看大图" :visible.sync="bigImageVisible" width="80%">
+          <div style="text-align:center">
+            <img :src="currentBigImageUrl" width="auto">
+          </div>
+        </el-dialog>
     </div>
 </template>
 <script>
 import { addSession, session, sessionDialog, deleteSessionDialog, sessionDetail, sessionMessages,readstatus, friends, findSessionByFriend, addFriend, addOperator, confirmOperator, operators, deleteOpt, userManage, updateUserManage, getReadUsers, deleteMessage, withDrawnMessage, flushMessage, createWebRTC } from '@/api/im'
 import { query } from '@/api/user'
+import { upload } from '@/api/file'
 
 export default {
   name: 'im',
@@ -529,6 +582,8 @@ export default {
       file: {},
       userManage: {},
       videoVisible: false,
+      bigImageVisible: false,
+      currentBigImageUrl: '',
       remoteSession: '',
       localSession: '',
       localPC: null,
@@ -601,6 +656,38 @@ export default {
     this.initWebSocket()
   },
   methods: {
+    loadBigImage (content)  {
+      this.currentBigImageUrl = content
+      this.bigImageVisible = true
+      console.log(this.currentBigImageUrl, this.bigImageVisible)
+    },
+    uploadData (data, file_type) {
+      upload(data).then(response => {
+        console.log(response)
+        if (response.data.code === 0) {
+          this.send_form_type = file_type
+          this.send_form_content = response.data.data.down_url
+          this.send()
+        } else {
+          this.$message.error('上传失败')
+        }
+      }).catch(error => {
+        console.log(error)
+        this.$message.error('请求错误')
+      })
+    },
+    sendFile () {
+      let file = this.$refs.upload_file.$data.uploadFiles[0]
+      var data = new FormData();
+      data.append('file', file.raw);
+      this.uploadData(data, 1)
+    },
+    sendImage () {
+      let file = this.$refs.upload_image.$data.uploadFiles[0]
+      var data = new FormData();
+      data.append('file', file.raw);
+      this.uploadData(data, 2)
+    },
     log (msg) {
       document.getElementById('logs').innerHTML += msg + '<br>'
       // console.log(msg)
@@ -1045,12 +1132,14 @@ export default {
             session_message_type: 3,
             message: {
               session_id: this.session.session_id,
+              message_type: this.send_form_type,
               content: this.send_form_content
             }
           }
         }
       }
       this.websocketsend(JSON.stringify(actions))
+      this.send_form_type = 0
       this.send_form_content = ''
     },
     sleep (time) {
@@ -1115,13 +1204,11 @@ export default {
           this.$message.error('请求错误')
         })
     },
-    // imgClick (index) {
-    //   this.wxImgVisisable = false
-    //   let imgUrl = 'https://res.wx.qq.com/mpres/htmledition/images/icon/emotion/' + index + '.gif'
-    //   this.send_form.image = true
-    //   this.send_form.desc = imgUrl
-    //   this.send()
-    // },
+    imgClick (index) {
+      this.send_form_content = 'https://res.wx.qq.com/mpres/htmledition/images/icon/emotion/' + index + '.gif'
+      this.send_form_type = 2
+      this.send()
+    },
     getReadUsers (message) {
       getReadUsers(message).then(response => {
         if (response.data.code === 0) {

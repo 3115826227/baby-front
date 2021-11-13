@@ -72,23 +72,6 @@
                 </el-row>
                 <el-row class="panel-content-item">
                     <el-col :span="4">
-                        <label>性别：</label>
-                    </el-col>
-                    <el-col :span="12">
-                        <span v-if="edit">
-                            <el-select size="small" v-model="gender">
-                                <el-option label="男" value="1"></el-option>
-                                <el-option label="女" value="2"></el-option>
-                            </el-select>
-                        </span>
-                        <span v-else="">
-                            <template v-if="detail.gender === 1">男</template>
-                            <template v-else="">女</template>
-                        </span>
-                    </el-col>
-                </el-row>
-                <el-row class="panel-content-item">
-                    <el-col :span="4">
                         <label>年龄：</label>
                     </el-col>
                     <el-col :span="12">
@@ -290,7 +273,18 @@ export default ({
                 if (response.data.code === 0) {
                     this.detail_form = this.detail
                     this.detail_form.head_img_url = response.data.data.down_url
-                    this.updateUserDetail()
+                    updateDetail(this.detail_form).then(response => {
+                        if (response.data.code === 0) {
+                            this.$message.success('更新成功')
+                            this.headimg_dialog_visible = false
+                            this.getUpdatedDetail()
+                        } else {
+                            this.$message.error('更新失败')
+                        }
+                    }).catch(error => {
+                        console.log(error)
+                        this.$message.error('请求错误')
+                    })
                 } else {
                      this.$message.error('上传失败')
                 }
