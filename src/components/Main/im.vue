@@ -36,6 +36,12 @@
                           <span v-else-if="item.latest_message.message_type === 2">
                             [图片]
                           </span>
+                          <span v-else-if="item.latest_message.message_type === 101">
+                            [已拒绝通话]
+                          </span>
+                          <span v-else-if="item.latest_message.message_type === 100">
+                            [通话记录]
+                          </span>
                       </span>
                       <span v-else="">
                         <span v-if="item.latest_message.send.account_id !== user_id">
@@ -242,6 +248,15 @@
                                 <!-- <img :src="item.content" width="50px" /> -->
                                 <el-avatar shape="square" :size="60" fit="fill" :src="item.content"></el-avatar>
                               </span>
+                              <span v-else-if="item.message_type === 100" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
+                                通话时长 [{{timeFormat(item.content)}}]
+                              </span>
+                              <span v-else-if="item.message_type === 101" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
+                                通话已拒绝
+                              </span>
+                              <span v-else-if="item.message_type === 102" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
+                                对方无响应
+                              </span>
                             </el-col>
                             </el-row>
                             <div style="text-align:right">
@@ -262,8 +277,17 @@
                             </div>
                             <el-row>
                               <el-col :span="10" style="padding:1% 0;">
-                                <span style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
+                                <span v-if="item.message_type === 0"  style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
                                   {{item.content}}
+                                </span>
+                                 <span v-else-if="item.message_type === 100" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
+                                  通话时长 [{{timeFormat(item.content)}}]
+                                </span>
+                                <span v-else-if="item.message_type === 101" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
+                                  通话已拒绝
+                                </span>
+                                <span v-else-if="item.message_type === 102" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
+                                  对方无响应
                                 </span>
                                 <span style="margin-left:1%;color:#f56c6c;font-size:12px;" @click="deleteMessage(item)">删除</span>
                               </el-col>
@@ -309,7 +333,9 @@
                       </el-upload>
                     </el-col>
                     <el-col :span="1">
-                      <i class="el-icon-video-camera"></i>
+                      <div @click="sendWebRTC(100)">
+                         <i class="el-icon-video-camera"></i>
+                      </div>
                     </el-col>
                   </el-row>
                 </div>
@@ -320,7 +346,6 @@
                   <el-input type="textarea" v-model="send_form_content" rows="4" style="width:68%;"></el-input>
                 </div>
                 <div>
-                  <!-- <el-button type="success" @click="createVideo">发起视频</el-button> -->
                   <el-button type="primary" @click="send">发送</el-button>
                 </div>
               </div>
@@ -508,14 +533,27 @@
             <el-button type="primary" @click="addSession()">添加会话</el-button>
           </el-row>
         </el-drawer>
-        <el-dialog title="视频" :visible.sync="videoVisible" width="80%" :before-close="handleCloseVideo">
-          <textarea v-model="localSession" cols="100" rows="10"></textarea><br/>
-          <textarea v-model="remoteSession" cols="100" rows="10"></textarea>
-          <video id="local-video" width="160" height="120" autoplay muted></video>
-          <br/>
-          <video id="remote-video" width="480" height="360" autoplay muted></video>
-          <br/>
-          <div id="logs"></div>
+        <el-dialog title="视频通话" :visible.sync="videoVisible" width="70%" :before-close="handleCloseVideo">
+          <el-row>
+            <el-col :span="12">
+              <video id="local-video" width="100%" autoplay muted></video>
+            </el-col>
+            <el-col :span="12">
+              <video id="remote-video" width="100%" autoplay muted></video>
+            </el-col>
+          </el-row>
+          <div style="text-align:center" v-if="hangupVisible">
+            <el-button type="danger" @click="sendWebRTC(303)">挂断</el-button>
+          </div>
+          <div>
+            <div style="text-align:center">
+              {{videoNotify}}
+            </div>
+            <div style="text-align:center" v-if="videoReceive">
+              <el-button type="primary" @click="sendWebRTC(200)">接受</el-button>
+              <el-button type="danger" @click="sendWebRTC(302)">拒绝</el-button>
+            </div>
+          </div>
         </el-dialog>
         <el-dialog title="查看大图" :visible.sync="bigImageVisible" width="80%">
           <div style="text-align:center">
@@ -525,10 +563,12 @@
     </div>
 </template>
 <script>
-import { addSession, session, sessionDialog, deleteSessionDialog, sessionDetail, sessionMessages,readstatus, friends, findSessionByFriend, addFriend, addOperator, confirmOperator, operators, deleteOpt, userManage, updateUserManage, getReadUsers, deleteMessage, withDrawnMessage, flushMessage, createWebRTC } from '@/api/im'
+import { addSession, session, sessionDialog, deleteSessionDialog, sessionDetail, sessionMessages,readstatus, friends, findSessionByFriend, addFriend, addOperator, confirmOperator, operators, deleteOpt, userManage, updateUserManage, getReadUsers, deleteMessage, withDrawnMessage, flushMessage } from '@/api/im'
 import { query } from '@/api/user'
 import { upload } from '@/api/file'
-
+var log = msg => {
+  console.log(msg)
+};
 export default {
   name: 'im',
   props: ['websocketClient', 'websocketMessage'],
@@ -582,12 +622,22 @@ export default {
       file: {},
       userManage: {},
       videoVisible: false,
+      videoNotify: '',
+      videoReceive: false,
+      hangupVisible: false,
+      inviteAccount: '',
       bigImageVisible: false,
       currentBigImageUrl: '',
       remoteSession: '',
       localSession: '',
       localPC: null,
       remotePC: null,
+      local_video: {
+        srcObject: null
+      },
+      remote_video: {
+        srcObject: null
+      },
       constraints: {
           audio: {
             noiseSuppression: true,
@@ -688,23 +738,84 @@ export default {
       data.append('file', file.raw);
       this.uploadData(data, 2)
     },
-    log (msg) {
-      document.getElementById('logs').innerHTML += msg + '<br>'
-      // console.log(msg)
+    sleepTime (time) {
+      return new Promise((resolve) => {
+        setTimeout(resolve, time);
+      });
+    },
+    async sendWebRTC (session_message_type) {
+      if (!this.judgeIsConnect()) {
+        return
+      }
+      this.videoVisible = true
+      let actions = {
+        ws_message_notify_type: 2,
+        ws_message: {
+          ws_message_type: session_message_type,
+          session_message: {
+            session_message_type: 2,
+            session: {
+              session_id: this.session.session_id,
+            },
+            web_rtc: {}
+          }
+        }
+      }
+      if (session_message_type === 100) {
+        // 通话邀请
+        this.webRTCSession(true)
+        await this.sleepTime(3000)
+        actions.ws_message.session_message.web_rtc.account_id = sessionStorage.getItem('user_id')
+        actions.ws_message.session_message.web_rtc.sdp = this.localSession
+      } else if (session_message_type === 200) {
+        // 接受通话
+        this.webRTCSession(true)
+        await this.sleepTime(3000)
+        this.webRTCSession(false)
+        await this.sleepTime(3000)
+        actions.ws_message.session_message.web_rtc.invite_account = this.inviteAccount
+        actions.ws_message.session_message.web_rtc.sdp = this.localSession
+        actions.ws_message.session_message.web_rtc.remote_sdp = this.remoteSession
+      }
+      this.websocketsend(JSON.stringify(actions))
+      if (session_message_type === 100) {
+        this.videoNotify = '请求已发送，请稍等'
+      } else if (session_message_type === 303) {
+        this.videoNotify = ''
+        this.hangupVisible = false
+        this.videoVisible = false
+        this.$message.warning('通话已挂断')
+        this.localSession = ''
+        this.localPC = null
+        this.remoteSession = ''
+        this.remotePC = null
+      } else {
+        this.videoReceive = false
+        if (session_message_type === 200) {
+          this.videoNotify = '通话进行中'
+          this.hangupVisible = true
+          // this.videoVisible = false
+        } else if(session_message_type === 302) {
+          this.videoNotify = ''
+          this.videoVisible = false
+          this.$message.warning('通话已拒绝')
+        }
+      }
     },
     webRTCSession (isPublisher) {
       var that = this;
       let pc = new RTCPeerConnection({
           iceServers: [
               {
-                  urls: 'stun:stun.l.google.com:19302'
+                  urls: 'stun:stun2.l.google.com:19302'
               }
           ]
       });
       pc.oniceconnectionstatechange = e => {
-        that.log(e);
-        that.log(pc.iceConnectionState);
+        log(e);
+        log(pc.iceConnectionState);
       }
+      console.log(isPublisher)
       if (isPublisher) {
           pc.onicecandidate = event => {
               if (event.candidate === null) {
@@ -714,11 +825,14 @@ export default {
           navigator.mediaDevices.getUserMedia({video: true, audio: false})
               .then(stream => {
                   stream.getTracks().forEach(track => pc.addTrack(track, stream));
-                  document.getElementById('local-video').srcObject = stream;
+                  // this.local_video.srcObject = stream;
+                  that.$nextTick(()=> {
+                   document.getElementById('local-video').srcObject = stream;
+                  })
                   pc.createOffer()
                       .then(d => pc.setLocalDescription(d))
-                      .catch(that.log)
-              }).catch(that.log);
+                      .catch(log)
+              }).catch(log);
           that.localPC = pc
       } else {
           pc.onicecandidate = event => {
@@ -729,11 +843,15 @@ export default {
           pc.addTransceiver('video');
           pc.createOffer()
               .then(d => pc.setLocalDescription(d))
-              .catch(that.log);
+              .catch(log);
 
           pc.ontrack = function (event) {
-              let el = document.getElementById('remote-video');
-              el.srcObject = event.streams[0];
+              // let el = document.getElementById('remote-video');
+              that.$nextTick(()=> {
+                document.getElementById('remote-video').srcObject = event.streams[0];
+              })
+              // this.remote_video.srcObject = event.streams[0]
+              // el.srcObject = event.streams[0];
               // el.autoplay = true;
           };
           that.remotePC = pc
@@ -800,6 +918,13 @@ export default {
     init () {
       this.user_id = sessionStorage.getItem('user_id')
       this.username = sessionStorage.getItem('username')
+    },
+    timeFormat (time) {
+      var h = parseInt(time/3600)
+      time = time - h*3600
+      var m = parseInt(time/60)
+      var s = time - m *60
+      return this.add0(h) + ':' + this.add0(m) + ':' + this.add0(s)
     },
     add0 (m) {
       return m < 10 ? '0' + m : m
@@ -1057,7 +1182,7 @@ export default {
     initWebSocket () { // 初始化weosocket
       this.websock = this.websocketClient
     },
-    receiveMessage (redata) { // 数据接收
+    async receiveMessage (redata) { // 数据接收
       if (redata.ws_message_notify_type === 2) {
         switch (redata.ws_message.ws_message_type) {
           case 0:
@@ -1115,6 +1240,71 @@ export default {
                   }
                 }
                 this.flushWithDrawnMessage(newMessage.message_id) 
+                break
+          case 100:
+            this.videoVisible = true
+            this.videoReceive = true
+            this.videoNotify = '视频通话请求'
+            this.inviteAccount = redata.ws_message.session_message.web_rtc.invite_account
+            this.selectSession(redata.ws_message.session_message.session.session_id)
+            break
+          case 200:
+            this.webRTCSession(false)
+            await this.sleepTime(3000)
+            if (!this.judgeIsConnect()) {
+              return
+            }
+            var notify = {
+              ws_message_notify_type: 2,
+              ws_message: {
+                ws_message_type: 600,
+                session_message: {
+                  session_message_type: 2,
+                  session: {
+                    session_id: this.session.session_id,
+                  },
+                  web_rtc: {}
+                }
+              }
+            }
+            notify.ws_message.session_message.web_rtc.invite_account = redata.ws_message.session_message.web_rtc.invite_account
+            notify.ws_message.session_message.web_rtc.remote_sdp = this.remoteSession
+            this.websocketsend(JSON.stringify(notify))
+            this.videoNotify = '通话进行中'
+            this.hangupVisible = true
+            // this.videoVisible = false
+            break
+          case 301:
+            this.$message.warning = '请求已超时'
+            this.videoNotify = ''
+            this.videoVisible = false
+            break
+          case 302:
+            if (this.session.session_type === 0) {
+              this.$message.warning = '对方已拒绝'
+              this.videoNotify = ''
+              this.videoVisible = false
+            }
+            break
+          case 303:
+            if (this.session.session_type === 0) {
+              this.$message.warning = '对方已挂断'
+              this.videoNotify = ''
+              this.videoVisible = false
+              this.hangupVisible = false
+              this.localSession = ''
+              this.localPC = null
+              this.remoteSession = ''
+              this.remotePC = null
+            }
+            break
+          case 400:
+            // 本地回执
+            this.localPC.setRemoteDescription(new RTCSessionDescription(JSON.parse(atob(redata.ws_message.session_message.web_rtc.swap_sdp))))
+            break;
+          case 500:
+            // 远程回执
+            this.remotePC.setRemoteDescription(new RTCSessionDescription(JSON.parse(atob(redata.ws_message.session_message.web_rtc.remote_swap_sdp))))
         }
       }
     },
@@ -1144,16 +1334,6 @@ export default {
     },
     sleep (time) {
       return new Promise((resolve) => setTimeout(resolve, time));
-    },
-    createVideo () {
-      this.videoVisible = true
-      this.webRTCSession(true)
-      this.sleep(1000).then(() => {
-          createWebRTC({
-            sdp: this.localSession,
-            session_id: this.session.session_id
-          })
-      })
     },
     handleCloseVideo (done) {
       this.$confirm('确认关闭？').then(e => {

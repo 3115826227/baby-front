@@ -145,11 +145,3 @@ export function flushMessage (req) {
         method: 'delete'
     })
 }
-
-export function createWebRTC(data) {
-    return request({
-        url: 'im/session/webrtc',
-        method: 'post',
-        data
-    })
-}
