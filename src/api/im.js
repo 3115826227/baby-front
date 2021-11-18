@@ -51,6 +51,13 @@ export function readstatus(id) {
     })
 }
 
+export function singleMessageReadstatus(id, message_id, account_id) {
+    return request({
+        url: '/im/session/message/read_status/single?session_id=' + id + "&message_id=" + message_id + "&account_id=" + account_id,
+        method: 'get'
+    })
+}
+
 export function addFriend(data) {
     return request({
         url: '/im/session/friend',

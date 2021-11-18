@@ -36,11 +36,14 @@
                           <span v-else-if="item.latest_message.message_type === 2">
                             [图片]
                           </span>
+                          <span v-else-if="item.latest_message.message_type === 100">
+                            [通话记录]
+                          </span>
                           <span v-else-if="item.latest_message.message_type === 101">
                             [已拒绝通话]
                           </span>
-                          <span v-else-if="item.latest_message.message_type === 100">
-                            [通话记录]
+                          <span v-else-if="item.latest_message.message_type === 102">
+                            [通话无响应]
                           </span>
                       </span>
                       <span v-else="">
@@ -163,121 +166,79 @@
         <div id="panel">
           <div v-if="panel === 1">
             <div id="im-content" v-if="session.session_id !== 0">
-              <div id="im-panel">
-                <el-card class="box-card">
-                  <div slot="header">
-                    <el-row>
-                      <el-col :span="20">
-                        <span>{{session.name}} </span>
-                        <el-tag size="mini">
-                          <span v-if="session.session_type === 0">双人会话</span>
-                          <span v-else-if="session.session_type === 1">讨论组</span>
-                          <span v-else-if="session.session_type === 2">群会话</span>
-                        </el-tag>
-                        <span v-if="session.session_type === 0" style="margin-left:1%">
-                          <el-tag size="mini" type="info" v-if="current_friend_status === 1">
-                            <span>离线</span>
+              <div :style="session.session_type === 0 ? '': 'width:52%;float:left'">
+                <div id="im-panel">
+                  <el-card class="box-card">
+                    <div slot="header">
+                      <el-row>
+                        <el-col :span="20">
+                          <span>{{session.name}} </span>
+                          <el-tag size="mini">
+                            <span v-if="session.session_type === 0">双人会话</span>
+                            <span v-else-if="session.session_type === 1">讨论组</span>
+                            <span v-else-if="session.session_type === 2">群会话</span>
                           </el-tag>
-                          <el-tag size="mini" type="success" v-if="current_friend_status === 11">
-                            <span>电脑在线</span>
-                          </el-tag>
-                        </span>
-                        <span v-if="user_inputting.inputting && user_inputting.session_id === session.session_id" style="color:gray;font-size:13px;margin-left:1%">对方正在输入</span>
-                      </el-col>
-                      <el-col :span="4" style="text-align:right;font-size:14px;font-weight:500;color:#F56C6C">
-                        <span @click="flushMessage(session)">清空消息</span>
-                      </el-col>
-                    </el-row>
-                  </div>
-                  <div id="im-messages" style="height:380px;overflow:auto">
-                    <template v-if="!noMoreMessage">
-                      <div style="text-align:center" @click="getMoreSessionMessages(session.session_id)">
-                        <el-link style="font-size:13px">查看更多消息</el-link>
-                      </div>
-                    </template>
-                    <template v-else="">
-                      <div style="text-align:center;font-size:13px;color:gray">
-                        没有更多消息了
-                      </div>
-                    </template>
-                    <template>
-                      <el-row v-for="(item,index) in messages" :key="index">
-                        <div v-if="item.send.account_id === user_id">
-                          <div v-if="item.message_type !== 3">
-                            <el-row>
-                            <el-col :span="12" style="padding:1% 0;text-align:right;margin-left:50%">
-                              <span style="margin-right:1%;font-size:12px;">
-                                <span style="margin-right:1%;color:#f56c6c" @click="deleteMessage(item)">删除</span>
-                                <span style="margin-right:1%;color:#e6a23c" @click="withDrawnMessage(item)">撤回</span>
-                                <span v-if="item.read_user_total + 1 === session.joins.length" style="color:gray">
-                                  <i class="el-icon-success"></i>
-                                </span>
-                                <span v-else="">
-                                  <el-popover
-                                    placement="bottom"
-                                    width="200"
-                                    trigger="click"
-                                    >
-                                    <el-tabs type="border-card" stretch>
-                                      <el-tab-pane label="已读">
-                                        <el-card v-for="item in message_read_users.read_users" :key="item.account_id">
-                                          {{item.username}}
-                                        </el-card>
-                                      </el-tab-pane>
-                                      <el-tab-pane label="未读">
-                                        <el-card v-for="item in message_read_users.unread_users" :key="item.account_id">
-                                          {{item.username}}
-                                        </el-card>
-                                      </el-tab-pane>
-                                    </el-tabs>
-                                    <div class="read-total-number" slot="reference" @click="getReadUsers(item)"></div>
-                                  </el-popover>
-                                </span>  
-                              </span>
-                              <span v-if="item.message_type === 0" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
-                                {{item.content}}
-                              </span>
-                              <div v-else-if="item.message_type === 1"
-                                style="line-height:70px;text-align:center;font-size:14px;display:inline;padding:6% 8%;box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04);border-radius: 5px">
-                                <a :href="item.content" target="_blank">
-                                  <i class="el-icon-document"></i>
-                                  {{item.content.split("/")[item.content.split("/").length-1]}}
-                                </a>
-                              </div>
-                              <span v-else-if="item.message_type === 2" @click="loadBigImage(item.content)">
-                                <!-- <img :src="item.content" width="50px" /> -->
-                                <el-avatar shape="square" :size="60" fit="fill" :src="item.content"></el-avatar>
-                              </span>
-                              <span v-else-if="item.message_type === 100" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
-                                通话时长 [{{timeFormat(item.content)}}]
-                              </span>
-                              <span v-else-if="item.message_type === 101" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
-                                通话已拒绝
-                              </span>
-                              <span v-else-if="item.message_type === 102" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
-                                对方无响应
-                              </span>
-                            </el-col>
-                            </el-row>
-                            <div style="text-align:right">
-                              <span style="font-size:12px;color:gray;">
-                                  {{timestampToTime(item.send_timestamp)}}
-                              </span>
-                            </div>
-                          </div>
-                          <div v-else="" style="text-align:center;color:gray;font-size:13px;margin-top:1%;margin-bottom:1%">
-                            您撤回了一条消息
-                          </div>
+                          <span v-if="session.session_type === 0" style="margin-left:1%">
+                            <el-tag size="mini" type="info" v-if="current_friend_status === 1">
+                              <span>离线</span>
+                            </el-tag>
+                            <el-tag size="mini" type="success" v-if="current_friend_status === 11">
+                              <span>电脑在线</span>
+                            </el-tag>
+                          </span>
+                          <span v-if="user_inputting.inputting && user_inputting.session_id === session.session_id" style="color:gray;font-size:13px;margin-left:1%">对方正在输入</span>
+                        </el-col>
+                        <el-col :span="4" style="text-align:right;font-size:14px;font-weight:500;color:#F56C6C">
+                          <span @click="flushMessage(session)">清空消息</span>
+                        </el-col>
+                      </el-row>
+                    </div>
+                    <div id="im-messages" style="height:380px;overflow:auto">
+                      <template v-if="!noMoreMessage">
+                        <div style="text-align:center" @click="getMoreSessionMessages(session.session_id)">
+                          <el-link style="font-size:13px">查看更多消息</el-link>
                         </div>
-                        <div v-else="">
-                          <div v-if="item.message_type != 3">
-                            <div style="font-size:12px;color:gray" @click="openFriendDrawer(item.send.account_id)">
-                              <span v-if="item.send.remark !== ''">{{item.send.remark}}</span>
-                              <span v-else="">{{item.send.username}}</span>
-                            </div>
-                            <el-row>
-                              <el-col :span="10" style="padding:1% 0;">
-                                <span v-if="item.message_type === 0"  style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
+                      </template>
+                      <template v-else="">
+                        <div style="text-align:center;font-size:13px;color:gray">
+                          没有更多消息了
+                        </div>
+                      </template>
+                      <template>
+                        <el-row v-for="(item,index) in messages" :key="index">
+                          <div v-if="item.send.account_id === user_id">
+                            <div v-if="item.message_type !== 3">
+                              <el-row>
+                              <el-col :span="12" style="padding:1% 0;text-align:right;margin-left:50%">
+                                <span style="margin-right:1%;font-size:12px;">
+                                  <span style="margin-right:1%;color:#f56c6c" @click="deleteMessage(item)">删除</span>
+                                  <span style="margin-right:1%;color:#e6a23c" @click="withDrawnMessage(item)">撤回</span>
+                                  <span v-if="item.read_user_total + 1 === session.joins.length" style="color:gray">
+                                    <i class="el-icon-success"></i>
+                                  </span>
+                                  <span v-else="">
+                                    <el-popover
+                                      placement="bottom"
+                                      width="200"
+                                      trigger="click"
+                                      >
+                                      <el-tabs type="border-card" stretch>
+                                        <el-tab-pane label="已读">
+                                          <el-card v-for="item in message_read_users.read_users" :key="item.account_id">
+                                            {{item.username}}
+                                          </el-card>
+                                        </el-tab-pane>
+                                        <el-tab-pane label="未读">
+                                          <el-card v-for="item in message_read_users.unread_users" :key="item.account_id">
+                                            {{item.username}}
+                                          </el-card>
+                                        </el-tab-pane>
+                                      </el-tabs>
+                                      <div class="read-total-number" slot="reference" @click="getReadUsers(item)"></div>
+                                    </el-popover>
+                                  </span>  
+                                </span>
+                                <span v-if="item.message_type === 0" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
                                   {{item.content}}
                                 </span>
                                 <div v-else-if="item.message_type === 1"
@@ -288,9 +249,10 @@
                                   </a>
                                 </div>
                                 <span v-else-if="item.message_type === 2" @click="loadBigImage(item.content)">
+                                  <!-- <img :src="item.content" width="50px" /> -->
                                   <el-avatar shape="square" :size="60" fit="fill" :src="item.content"></el-avatar>
                                 </span>
-                                 <span v-else-if="item.message_type === 100" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
+                                <span v-else-if="item.message_type === 100" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
                                   通话时长 [{{timeFormat(item.content)}}]
                                 </span>
                                 <span v-else-if="item.message_type === 101" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
@@ -299,64 +261,133 @@
                                 <span v-else-if="item.message_type === 102" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
                                   对方无响应
                                 </span>
-                                <span style="margin-left:1%;color:#f56c6c;font-size:12px;" @click="deleteMessage(item)">删除</span>
                               </el-col>
-                            </el-row>
-                            <div style="">
+                              </el-row>
+                              <div style="text-align:right">
                                 <span style="font-size:12px;color:gray;">
-                                  {{timestampToTime(item.send_timestamp)}}
+                                    {{timestampToTime(item.send_timestamp)}}
                                 </span>
+                              </div>
+                            </div>
+                            <div v-else="" style="text-align:center;color:gray;font-size:13px;margin-top:1%;margin-bottom:1%">
+                              您撤回了一条消息
                             </div>
                           </div>
-                          <div v-else="" style="text-align:center;color:gray;font-size:13px;margin-top:1%;margin-bottom:1%">
-                            <span v-if="item.send.remark !== ''">{{item.send.remark}}</span>
-                            <span v-else="">{{item.send.username}}</span>
-                            撤回了一条消息
+                          <div v-else="">
+                            <div v-if="item.message_type != 3">
+                              <div style="font-size:12px;color:gray" @click="openFriendDrawer(item.send.account_id)">
+                                <span v-if="item.send.remark !== ''">{{item.send.remark}}</span>
+                                <span v-else="">{{item.send.username}}</span>
+                              </div>
+                              <el-row>
+                                <el-col :span="10" style="padding:1% 0;">
+                                  <span v-if="item.message_type === 0"  style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
+                                    {{item.content}}
+                                  </span>
+                                  <div v-else-if="item.message_type === 1"
+                                    style="line-height:70px;text-align:center;font-size:14px;display:inline;padding:6% 8%;box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04);border-radius: 5px">
+                                    <a :href="item.content" target="_blank">
+                                      <i class="el-icon-document"></i>
+                                      {{item.content.split("/")[item.content.split("/").length-1]}}
+                                    </a>
+                                  </div>
+                                  <span v-else-if="item.message_type === 2" @click="loadBigImage(item.content)">
+                                    <el-avatar shape="square" :size="60" fit="fill" :src="item.content"></el-avatar>
+                                  </span>
+                                  <span v-else-if="item.message_type === 100" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
+                                    通话时长 [{{timeFormat(item.content)}}]
+                                  </span>
+                                  <span v-else-if="item.message_type === 101" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
+                                    通话已拒绝
+                                  </span>
+                                  <span v-else-if="item.message_type === 102" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
+                                    对方无响应
+                                  </span>
+                                  <span style="margin-left:1%;color:#f56c6c;font-size:12px;" @click="deleteMessage(item)">删除</span>
+                                </el-col>
+                              </el-row>
+                              <div style="">
+                                  <span style="font-size:12px;color:gray;">
+                                    {{timestampToTime(item.send_timestamp)}}
+                                  </span>
+                              </div>
+                            </div>
+                            <div v-else="" style="text-align:center;color:gray;font-size:13px;margin-top:1%;margin-bottom:1%">
+                              <span v-if="item.send.remark !== ''">{{item.send.remark}}</span>
+                              <span v-else="">{{item.send.username}}</span>
+                              撤回了一条消息
+                            </div>
                           </div>
+                        </el-row>
+                      </template>
+                    </div>
+                    <HR></HR>
+                    <div style="height:5px;">
+                    <el-row>
+                      <el-col :span="1">
+                          <el-popover
+                            placement="bottom"
+                            width="400"
+                            trigger="click"
+                            >
+                            <span v-for="(item, index) in wxImgList" :key="index" @click="imgClick(index)">
+                              <img :src="'https://res.wx.qq.com/mpres/htmledition/images/icon/emotion/'+index+'.gif'" />
+                            </span>
+                            <i slot="reference" class="el-icon-circle-plus-outline"></i>
+                          </el-popover>
+                      </el-col>
+                      <el-col :span="1">
+                        <el-upload ref="upload_image" action="#" :auto-upload="false" :show-file-list="false" :on-change="sendImage">
+                            <i class="el-icon-picture-outline"></i>
+                        </el-upload>
+                      </el-col>
+                      <el-col :span="1">
+                        <el-upload ref="upload_file" action="#" :auto-upload="false" :show-file-list="false" :on-change="sendFile">
+                            <i class="el-icon-document"></i>
+                        </el-upload>
+                      </el-col>
+                      <el-col :span="1">
+                        <div @click="sendWebRTC(100)">
+                          <i class="el-icon-video-camera"></i>
                         </div>
-                      </el-row>
-                    </template>
+                      </el-col>
+                    </el-row>
                   </div>
-                  <HR></HR>
-                  <div style="height:5px;">
-                  <el-row>
-                    <el-col :span="1">
-                        <el-popover
-                          placement="bottom"
-                          width="400"
-                          trigger="click"
-                          >
-                          <span v-for="(item, index) in wxImgList" :key="index" @click="imgClick(index)">
-                            <img :src="'https://res.wx.qq.com/mpres/htmledition/images/icon/emotion/'+index+'.gif'" />
-                          </span>
-                          <i slot="reference" class="el-icon-circle-plus-outline"></i>
-                        </el-popover>
-                    </el-col>
-                    <el-col :span="1">
-                      <el-upload ref="upload_image" action="#" :auto-upload="false" :show-file-list="false" :on-change="sendImage">
-                          <i class="el-icon-picture-outline"></i>
-                      </el-upload>
-                    </el-col>
-                    <el-col :span="1">
-                      <el-upload ref="upload_file" action="#" :auto-upload="false" :show-file-list="false" :on-change="sendFile">
-                          <i class="el-icon-document"></i>
-                      </el-upload>
-                    </el-col>
-                    <el-col :span="1">
-                      <div @click="sendWebRTC(100)">
-                         <i class="el-icon-video-camera"></i>
-                      </div>
-                    </el-col>
-                  </el-row>
+                  </el-card>
                 </div>
-                </el-card>
+                <div id="im-send" style="text-align:right">
+                  <div style="margin:1% 0">
+                    <el-input type="textarea" v-model="send_form_content" rows="4" :style="session.session_type === 0 ? 'width:68%': ''"></el-input>
+                  </div>
+                  <div>
+                    <el-button type="primary" @click="send">发送</el-button>
+                  </div>
+                </div>
               </div>
-              <div id="im-send" style="text-align:right">
-                <div style="margin:1% 0">
-                  <el-input type="textarea" v-model="send_form_content" rows="4" style="width:68%;"></el-input>
-                </div>
-                <div>
-                  <el-button type="primary" @click="send">发送</el-button>
+              <div v-if="session.session_type !== 0" style="width:16%;float:left">
+                <div style="margin-left:2%">
+                  <el-card class="box-card" style="height:500px;">
+                    <div>
+                      <div style="font-size:13px;color:gray">公告</div>
+                      <div style="height:200px;font-size:13px;margin-top:2%">暂无公告</div>
+                    </div>
+                    <HR></HR>
+                    <div>
+                      <div style="font-size:13px;color:gray">成员·{{session.joins.length}}</div>
+                      <div style="height:180px; overflow:auto;">
+                        <div v-for="item in session.joins" :key="item.account_id" style="font-size:13px;padding:2% 0;" @click="openFriendDrawer(item.account_id)">
+                          <span style="color:gray;margin-right:2%">{{item.username}}</span>
+                          <el-tag size="mini" v-if="item.online_type === 1" type="info">
+                            <span>离线</span>
+                          </el-tag>
+                          <el-tag size="mini" v-else-if="item.online_type === 11" type="success">
+                            <span>电脑在线</span>
+                          </el-tag>
+                        </div>
+                      </div>
+                    </div>
+                    <HR></HR>
+                  </el-card>
                 </div>
               </div>
             </div>
@@ -573,7 +604,7 @@
     </div>
 </template>
 <script>
-import { addSession, session, sessionDialog, deleteSessionDialog, sessionDetail, sessionMessages,readstatus, friends, findSessionByFriend, addFriend, addOperator, confirmOperator, operators, deleteOpt, userManage, updateUserManage, getReadUsers, deleteMessage, withDrawnMessage, flushMessage } from '@/api/im'
+import { addSession, session, sessionDialog, deleteSessionDialog, sessionDetail, sessionMessages, readstatus, singleMessageReadstatus, friends, findSessionByFriend, addFriend, addOperator, confirmOperator, operators, deleteOpt, userManage, updateUserManage, getReadUsers, deleteMessage, withDrawnMessage, flushMessage } from '@/api/im'
 import { query } from '@/api/user'
 import { upload } from '@/api/file'
 var log = msg => {
@@ -704,7 +735,8 @@ export default {
       this.websock.send(JSON.stringify(notify))
     },
     deep: true,
-    immediate: true
+    immediate: true,
+    timeFunction: {}
   },
   created () {
     this.init()
@@ -716,6 +748,14 @@ export default {
     this.initWebSocket()
   },
   methods: {
+    setTimer (f, interval) {
+      this.timeFunction = setInterval(() => {
+        f()
+      }, interval);
+    },
+    clearTimer () {
+      clearInterval(this.timeFunction);
+    },
     loadBigImage (content)  {
       this.currentBigImageUrl = content
       this.bigImageVisible = true
@@ -825,14 +865,13 @@ export default {
         log(e);
         log(pc.iceConnectionState);
       }
-      console.log(isPublisher)
       if (isPublisher) {
           pc.onicecandidate = event => {
               if (event.candidate === null) {
                   that.localSession = btoa(JSON.stringify(pc.localDescription))
               }
           };
-          navigator.mediaDevices.getUserMedia({video: true, audio: false})
+          navigator.mediaDevices.getUserMedia({video: true, audio: true})
               .then(stream => {
                   stream.getTracks().forEach(track => pc.addTrack(track, stream));
                   // this.local_video.srcObject = stream;
@@ -851,6 +890,7 @@ export default {
               }
           };
           pc.addTransceiver('video');
+          pc.addTransceiver('audio')
           pc.createOffer()
               .then(d => pc.setLocalDescription(d))
               .catch(log);
@@ -891,7 +931,6 @@ export default {
         name: this.session_name,
         joins: ids
       }
-      console.log(params)
       addSession(params).then(response => {
         if (response.data.code === 0) {
           this.$message.success('创建成功')
@@ -1038,6 +1077,22 @@ export default {
             })
         }
       }
+      this.clearTimer()
+      this.setTimer(() => {
+        let notify = {
+          ws_message_notify_type: 2,
+          ws_message: {
+              ws_message_type: 5,
+              session_message: {
+                session_message_type: 2,
+                session: {
+                  session_id: this.session.session_id,
+                }
+              }
+          }
+        }
+        this.websock.send(JSON.stringify(notify))
+      }, 3000)
     },
     selectOperator (item) {
       this.panel = 2
@@ -1222,6 +1277,16 @@ export default {
                     this.messages.push(newMessage)
                     this.scrollToBottom()
                 }
+                if (newMessage.send.account_id !== this.user_id && newMessage.session_id === this.session.session_id) {
+                  singleMessageReadstatus(newMessage.session_id, newMessage.message_id, newMessage.send.account_id).then(response => {
+                    if (response.data.code !== 0) {
+                      this.$message.error('请求失败')
+                    }
+                  }).catch(error => {
+                    this.$message.error('请求错误')
+                    console.log(error)
+                  })
+                }
             }
             break;
           case 4:
@@ -1231,7 +1296,44 @@ export default {
             }
             break;
           case 5:
+            if (redata.ws_message.session_message.session.session_id === this.session.session_id) {
+              var users = redata.ws_message.session_message.session.users
+              for (i = 0; i < this.session.joins.length; i++) {
+                var u = this.session.joins[i]
+                for (var j = 0; j < users.length; j++) {
+                  if (u.account_id === users[j].account_id) {
+                    u.online_type = users[j].online_type
+                    this.session.joins.splice(i, 1, u)
+                  }
+                }
+              }
+              if (this.session.session_type === 0) {
+                for (i = 0; i < this.session.joins.length; i++) {
+                  u = this.session.joins[i]
+                  if (u.account_id !== this.user_id) {
+                    this.current_friend_status = u.online_type
+                  }
+                }
+              }
+            }
+            break;
           case 6:
+            if (redata.ws_message.session_message.read_message.session_id === this.session.session_id) {
+              var read_message_id = redata.ws_message.session_message.read_message.message_id
+              for (i = 0; i < this.messages.length; i++) {
+                if (this.messages[i].send.account_id !== this.user_id) {
+                  continue
+                }
+                var message = this.messages[i]
+                if (this.messages[i].message_id === read_message_id) {
+                  message.read_user_total += 1
+                  console.log(message)
+                  this.messages.splice(i, 1, message)
+                  break;
+                }
+              }
+            }
+            break;
           case 7:
                 newMessage = redata.ws_message.session_message.message
                 for (i = 0; i < this.sessionDialogs.length; i++) {

@@ -133,17 +133,19 @@ export default {
         break
       case 2:
         msgTip += '会话消息通知'
+        if (redata.ws_message.session_message.session_message_type === 3) {
+          if (redata.ws_message.send.account_id != sessionStorage.getItem('user_id')) {
+            this.$notify.success({
+              title: '消息',
+              message: msgTip,
+              showClose: false
+            });
+          }
+        }
         break
       case 3:
         msgTip += '空间消息通知'
         break
-      }
-      if (redata.ws_message.send.account_id != sessionStorage.getItem('user_id')) {
-        this.$notify.success({
-          title: '消息',
-          message: msgTip,
-          showClose: false
-        });
       }
       this.websocketMessage = redata
     },
