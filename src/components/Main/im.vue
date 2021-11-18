@@ -280,6 +280,16 @@
                                 <span v-if="item.message_type === 0"  style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
                                   {{item.content}}
                                 </span>
+                                <div v-else-if="item.message_type === 1"
+                                  style="line-height:70px;text-align:center;font-size:14px;display:inline;padding:6% 8%;box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04);border-radius: 5px">
+                                  <a :href="item.content" target="_blank">
+                                    <i class="el-icon-document"></i>
+                                    {{item.content.split("/")[item.content.split("/").length-1]}}
+                                  </a>
+                                </div>
+                                <span v-else-if="item.message_type === 2" @click="loadBigImage(item.content)">
+                                  <el-avatar shape="square" :size="60" fit="fill" :src="item.content"></el-avatar>
+                                </span>
                                  <span v-else-if="item.message_type === 100" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
                                   通话时长 [{{timeFormat(item.content)}}]
                                 </span>
@@ -807,7 +817,7 @@ export default {
       let pc = new RTCPeerConnection({
           iceServers: [
               {
-                  urls: 'stun:stun2.l.google.com:19302'
+                  urls: 'stun:stun.l.google.com:19302'
               }
           ]
       });
