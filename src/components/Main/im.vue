@@ -347,8 +347,13 @@
                         </el-upload>
                       </el-col>
                       <el-col :span="1">
-                        <div @click="sendWebRTC(100)">
+                        <div @click="sendWebRTC(100, true)">
                           <i class="el-icon-video-camera"></i>
+                        </div>
+                      </el-col>
+                      <el-col :span="1">
+                        <div @click="sendWebRTC(100, false)">
+                          <i class="el-icon-phone-outline"></i>
                         </div>
                       </el-col>
                     </el-row>
@@ -373,7 +378,7 @@
                     </div>
                     <HR></HR>
                     <div>
-                      <div style="font-size:13px;color:gray">成员·{{session.joins.length}}</div>
+                      <div style="font-size:13px;color:gray">成员·<span v-if="session.joins">{{session.joins.length}}</span></div>
                       <div style="height:180px; overflow:auto;">
                         <div v-for="item in session.joins" :key="item.account_id" style="font-size:13px;padding:2% 0;" @click="openFriendDrawer(item.account_id)">
                           <span style="color:gray;margin-right:2%">{{item.username}}</span>
@@ -574,25 +579,29 @@
             <el-button type="primary" @click="addSession()">添加会话</el-button>
           </el-row>
         </el-drawer>
-        <el-dialog title="视频通话" :visible.sync="videoVisible" width="70%" :before-close="handleCloseVideo">
-          <el-row>
+        <el-dialog :title="video ? '视频' : '语音'" :visible.sync="videoVisible" width="70%" :before-close="handleCloseVideo">
+          <el-row v-if="video">
             <el-col :span="12">
               <video id="local-video" width="100%" autoplay muted></video>
             </el-col>
             <el-col :span="12">
               <video id="remote-video" width="100%" autoplay muted></video>
+              <audio id="remote-audio" autoplay muted></audio>
             </el-col>
           </el-row>
+          <el-row v-else="">
+            <audio id="remote-audio" autoplay muted></audio>
+          </el-row>
           <div style="text-align:center" v-if="hangupVisible">
-            <el-button type="danger" @click="sendWebRTC(303)">挂断</el-button>
+            <el-button type="danger" @click="sendWebRTC(303, video)">挂断</el-button>
           </div>
           <div>
             <div style="text-align:center">
               {{videoNotify}}
             </div>
             <div style="text-align:center" v-if="videoReceive">
-              <el-button type="primary" @click="sendWebRTC(200)">接受</el-button>
-              <el-button type="danger" @click="sendWebRTC(302)">拒绝</el-button>
+              <el-button type="primary" @click="sendWebRTC(200, video)">接受</el-button>
+              <el-button type="danger" @click="sendWebRTC(302, video)">拒绝</el-button>
             </div>
           </div>
         </el-dialog>
@@ -665,6 +674,7 @@ export default {
       videoVisible: false,
       videoNotify: '',
       videoReceive: false,
+      video: false,
       hangupVisible: false,
       inviteAccount: '',
       bigImageVisible: false,
@@ -793,10 +803,11 @@ export default {
         setTimeout(resolve, time);
       });
     },
-    async sendWebRTC (session_message_type) {
+    async sendWebRTC (session_message_type, video) {
       if (!this.judgeIsConnect()) {
         return
       }
+      this.video = video
       this.videoVisible = true
       let actions = {
         ws_message_notify_type: 2,
@@ -807,21 +818,23 @@ export default {
             session: {
               session_id: this.session.session_id,
             },
-            web_rtc: {}
+            web_rtc: {
+              video: video
+            }
           }
         }
       }
       if (session_message_type === 100) {
         // 通话邀请
-        this.webRTCSession(true)
+        this.webRTCSession(true, video)
         await this.sleepTime(3000)
         actions.ws_message.session_message.web_rtc.account_id = sessionStorage.getItem('user_id')
         actions.ws_message.session_message.web_rtc.sdp = this.localSession
       } else if (session_message_type === 200) {
         // 接受通话
-        this.webRTCSession(true)
+        this.webRTCSession(true, video)
         await this.sleepTime(3000)
-        this.webRTCSession(false)
+        this.webRTCSession(false, video)
         await this.sleepTime(3000)
         actions.ws_message.session_message.web_rtc.invite_account = this.inviteAccount
         actions.ws_message.session_message.web_rtc.sdp = this.localSession
@@ -831,6 +844,34 @@ export default {
       if (session_message_type === 100) {
         this.videoNotify = '请求已发送，请稍等'
       } else if (session_message_type === 303) {
+        if (video) {
+          this.$nextTick(() => {
+            var tracks = document.getElementById('local-video').srcObject.getTracks();
+            for(var i = 0 ; i< tracks.length ; i++)
+            {
+              tracks[i].stop();
+            }
+            tracks = document.getElementById('remote-video').srcObject.getTracks();
+            for(i = 0 ; i< tracks.length ; i++)
+            {
+              tracks[i].stop();
+            }
+            tracks = document.getElementById('remote-audio').srcObject.getTracks();
+            for(i = 0 ; i< tracks.length ; i++)
+            {
+              tracks[i].stop();
+            }
+          })
+        } else {
+          this.$nextTick(() => {
+            var tracks = document.getElementById('remote-audio').srcObject.getTracks();
+            for(var i = 0 ; i< tracks.length ; i++)
+            {
+              tracks[i].stop();
+            }
+          })
+        }
+        
         this.videoNotify = ''
         this.hangupVisible = false
         this.videoVisible = false
@@ -852,12 +893,12 @@ export default {
         }
       }
     },
-    webRTCSession (isPublisher) {
+    webRTCSession (isPublisher, video) {
       var that = this;
       let pc = new RTCPeerConnection({
           iceServers: [
               {
-                  urls: 'stun:stun.l.google.com:19302'
+                  urls: 'stun:stun1.l.google.com:19302'
               }
           ]
       });
@@ -871,12 +912,20 @@ export default {
                   that.localSession = btoa(JSON.stringify(pc.localDescription))
               }
           };
-          navigator.mediaDevices.getUserMedia({video: true, audio: true})
+          if (!navigator.mediaDevices||
+            !navigator.mediaDevices.getUserMedia) {
+            this.$message.error("getUserMedia is not supported!")
+            return;
+          }
+          navigator.mediaDevices.getUserMedia({video: video, audio: true})
               .then(stream => {
                   stream.getTracks().forEach(track => pc.addTrack(track, stream));
                   // this.local_video.srcObject = stream;
                   that.$nextTick(()=> {
-                   document.getElementById('local-video').srcObject = stream;
+                    if (video) {
+                      document.getElementById('local-video').srcObject = stream;
+                      document.getElementById('local-video').autoplay = true;
+                    }
                   })
                   pc.createOffer()
                       .then(d => pc.setLocalDescription(d))
@@ -889,7 +938,9 @@ export default {
                   that.remoteSession = btoa(JSON.stringify(pc.localDescription))
               }
           };
-          pc.addTransceiver('video');
+          if (video) {
+            pc.addTransceiver('video')
+          }
           pc.addTransceiver('audio')
           pc.createOffer()
               .then(d => pc.setLocalDescription(d))
@@ -898,7 +949,16 @@ export default {
           pc.ontrack = function (event) {
               // let el = document.getElementById('remote-video');
               that.$nextTick(()=> {
-                document.getElementById('remote-video').srcObject = event.streams[0];
+                if (video) {
+                  if (event.track.kind === 'video') {
+                    document.getElementById('remote-video').srcObject = event.streams[0];
+                    document.getElementById('remote-video').autoplay = true
+                  } else if (event.track.kind === 'audio') {
+                    document.getElementById('remote-audio').srcObject = event.streams[0];
+                  }
+                } else {
+                  document.getElementById('remote-audio').srcObject = event.streams[0];
+                }
               })
               // this.remote_video.srcObject = event.streams[0]
               // el.srcObject = event.streams[0];
@@ -1063,16 +1123,15 @@ export default {
       this.panel = 1
       this.getSessionDetail(sessionId)
       this.getNewSessionMessages(sessionId)
-      var that = this
       for (var i = 0; i < this.sessions.length; i++) {
         if (this.sessions[i].session_id === sessionId) {
           this.sessions[i].unread = 0
-          readstatus(sessionId).then(function (response) {
+          readstatus(sessionId).then(response => {
             if (response.data.code === 0) {
-              that.getSessionDialog()
+              this.getSessionDialog()
             }
           })
-            .catch(function (error) {
+            .catch(error => {
               console.log(error)
             })
         }
@@ -1354,14 +1413,19 @@ export default {
                 this.flushWithDrawnMessage(newMessage.message_id) 
                 break
           case 100:
+            this.video = redata.ws_message.session_message.web_rtc.video
             this.videoVisible = true
             this.videoReceive = true
-            this.videoNotify = '视频通话请求'
+            if (this.video) {
+              this.videoNotify = '视频通话请求'
+            } else {
+              this.videoNotify = '语音通话请求'
+            }
             this.inviteAccount = redata.ws_message.session_message.web_rtc.invite_account
             this.selectSession(redata.ws_message.session_message.session.session_id)
             break
           case 200:
-            this.webRTCSession(false)
+            this.webRTCSession(false, redata.ws_message.session_message.web_rtc.video)
             await this.sleepTime(3000)
             if (!this.judgeIsConnect()) {
               return
@@ -1379,6 +1443,7 @@ export default {
                 }
               }
             }
+            notify.ws_message.session_message.web_rtc.video = redata.ws_message.session_message.web_rtc.video
             notify.ws_message.session_message.web_rtc.invite_account = redata.ws_message.session_message.web_rtc.invite_account
             notify.ws_message.session_message.web_rtc.remote_sdp = this.remoteSession
             this.websocketsend(JSON.stringify(notify))
@@ -1393,6 +1458,15 @@ export default {
             break
           case 302:
             if (this.session.session_type === 0) {
+              if (this.video) {
+                this.$nextTick(() => {
+                  var tracks = document.getElementById('local-video').srcObject.getTracks();
+                  for(var i = 0 ; i< tracks.length ; i++)
+                  {
+                      tracks[i].stop();
+                  }
+                })  
+              }
               this.$message.warning = '对方已拒绝'
               this.videoNotify = ''
               this.videoVisible = false
@@ -1408,6 +1482,33 @@ export default {
               this.localPC = null
               this.remoteSession = ''
               this.remotePC = null
+              if (this.video) {
+                this.$nextTick(() => {
+                  var tracks = document.getElementById('local-video').srcObject.getTracks();
+                  for(var i = 0 ; i< tracks.length ; i++)
+                  {
+                      tracks[i].stop();
+                  }
+                  tracks = document.getElementById('remote-video').srcObject.getTracks();
+                  for(i = 0 ; i< tracks.length ; i++)
+                  {
+                      tracks[i].stop();
+                  }
+                  tracks = document.getElementById('remote-audio').srcObject.getTracks();
+                  for(i = 0 ; i< tracks.length ; i++)
+                  {
+                      tracks[i].stop();
+                  }
+                })
+              } else {
+                this.$nextTick(() => {
+                  var tracks = document.getElementById('remote-audio').srcObject.getTracks();
+                  for(var i = 0 ; i< tracks.length ; i++)
+                  {
+                      tracks[i].stop();
+                  }
+                })
+              }
             }
             break
           case 400:
