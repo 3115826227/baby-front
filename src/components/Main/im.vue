@@ -706,7 +706,8 @@ export default {
         inputting: false
       },
       current_friend_status: 0,
-      message_read_users: {}
+      message_read_users: {},
+      turn_config: {}
     }
   },
   watch: {
@@ -899,6 +900,10 @@ export default {
           iceServers: [
               {
                   urls: 'stun:stun1.l.google.com:19302'
+              },{
+                  urls: this.turn_config.url,
+                  username: this.turn_config.username,
+                  credential: this.turn_config.credential
               }
           ]
       });
@@ -1024,9 +1029,18 @@ export default {
         }
       })
     },
+    getIP (url) {
+      var reg = new RegExp(/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/);
+      return url.match(reg)
+    },
     init () {
       this.user_id = sessionStorage.getItem('user_id')
       this.username = sessionStorage.getItem('username')
+      console.log(process.env.VUE_APP_BASE_API)
+      this.turn_config.url = 'turn:' + this.getIP(process.env.VUE_APP_BASE_API) + ':3478'
+      this.turn_config.username = 'kurento'
+      this.turn_config.credential = 'kurento'
+      console.log(this.turn_config)
     },
     timeFormat (time) {
       var h = parseInt(time/3600)
