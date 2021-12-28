@@ -263,7 +263,8 @@ export default {
     },
     addComment (id, content) {
       var data = {
-        space_id: id,
+        biz_id: id,
+        biz_type: 1,
         comment: content
       }
       addComment(data).then(response => {
@@ -281,7 +282,8 @@ export default {
     },
     addReply (space_id, parent_id, reply_content) {
       var data = {
-        space_id: space_id,
+        biz_id: space_id,
+        biz_type: 1,
         parent_id: parent_id,
         comment: reply_content
       }
@@ -301,7 +303,8 @@ export default {
     addCommentOpt (space_id, comment_id, opt_type) {
       var data = {
         operator_id: comment_id,
-        space_id: space_id,
+        biz_id: space_id,
+        biz_type: 1,
         operator_type: opt_type
       }
       addOperator(data).then(response => {
@@ -318,7 +321,8 @@ export default {
     addSpaceOpt(id, opt_type) {
       var data = {
         operator_id: id,
-        space_id: id,
+        biz_id: id,
+        biz_type: 1,
         operator_type: opt_type
       }
       addOperator(data).then(response => {

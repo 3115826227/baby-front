@@ -1,23 +1,33 @@
 <template>
     <el-container id="index-container">
+      <!-- <div id="pc" v-if="!mobile"> -->
         <el-header id='header'>
             <el-menu mode="horizontal" router :default-active="$route.path" class="el-menu-demo"
               @open="handleOpen" @close="handleClose"
               background-color="#545c64" text-color="#fff" active-text-color="#ffd04b">
               <el-menu-item><router-link class="header-label" to="/index">宝宝煎米果</router-link></el-menu-item>
-              <asideBarItem v-for="router in routers" :router="router" :key="router.path">
+              <asideBarItem v-for="router in routers" :router="router" :mobile="mobile" :key="router.path">
               </asideBarItem>
               <el-submenu style="float:right;" :index="$route.path">
                 <template slot="title">
+                  <span style="margin-right:2%;">
+                    
+                    <span v-if="connect">
+                      <el-tag type="success" size="small">状态：在线</el-tag>
+                    </span>
+                    <span v-else="">
+                      <el-tag type="info" size="mini">状态：离线</el-tag>
+                    </span>
+                  </span>
                   <el-avatar :src="detail.head_img_url" size="small" fit="fit"></el-avatar>
-                  <span>{{detail.username}}@baby.com</span>
+                  <span> {{detail.username}}@baby.com</span>
                 </template>
                 <el-menu-item index="4-2" @click="logout">退出登录</el-menu-item>
               </el-submenu>
             </el-menu>
         </el-header>
-        <el-container id="content" style="height:100%">
-            <el-main class="el-main" style="height:100%">
+        <el-container id="content" style="height:auto">
+            <el-main class="el-main" style="height:auto">
                 <el-breadcrumb separator-class="el-icon-arrow-right">
                   <el-breadcrumb-item v-for="item in levelList" :key="item.path">
                     <span>{{item.name}}</span>
@@ -26,12 +36,29 @@
                 <Content :websocketClient = "websock" :websocketMessage="websocketMessage"></Content>
             </el-main>
         </el-container>
+      <!-- </div> -->
+      <div id="mobile" v-if="mobile">
+        <div id='footer-mobile'>
+            <el-menu mode="horizontal" router :default-active="$route.path"  class="el-menu-demo"
+              @open="handleOpen" @close="handleClose" active-text-color="red">
+              <asideBarItem v-for="router in mobileRouters" :router="router" :mobile="mobile" :key="router.path">
+              </asideBarItem>
+              <!-- <el-submenu style="float:right;" :index="$route.path">
+                <template slot="title">
+                  <el-avatar :src="detail.head_img_url" size="small" fit="fit"></el-avatar>
+                  <span>{{detail.username}}@baby.com</span>
+                </template>
+                <el-menu-item index="4-2" @click="logout">退出登录</el-menu-item>
+              </el-submenu> -->
+            </el-menu>
+        </div>
+      </div>
     </el-container>
 </template>
 
 <script>
 import asideBarItem from '../components/Bar/asideBarItem'
-import Content from '../components/Main/content'
+import Content from '../components/Main/pc/content'
 import { detail, logout } from '@/api/user'
 
 export default {
@@ -47,12 +74,29 @@ export default {
       detail: {},
       privateMessageUnreadNumber: 1,
       websock: null,
-      websocketMessage: {}
+      connect: false,
+      websocketMessage: {},
+      mobile: false
     }
   },
   computed: {
     routers () {
-      return this.$router.options.routes[0].children
+      let children = []
+      this.$router.options.routes[0].children.forEach(e => {
+        if (e.path.indexOf('/pc') > -1) {
+          children.push(e)
+        }
+      });
+      return children
+    },
+    mobileRouters () {
+      let children = []
+      this.$router.options.routes[0].children.forEach(e => {
+        if (e.path.indexOf('/mobile') > -1) {
+          children.push(e)
+        }
+      });
+      return children
     }
   },
   watch: {
@@ -72,11 +116,11 @@ export default {
       let matched = this.$route.matched.filter(item => item.name)
       this.levelList = matched
     },
-    getDetail () {
-      if (!sessionStorage.getItem('token')) {
+    async getDetail () {
+      if (!localStorage.getItem('token')) {
           window.location.href = '/'
       }
-      detail().then(response => {
+      await detail().then(response => {
           if (response.data.code === 0) {
             this.detail = response.data.data
             if (response.data.data.verify === true) {
@@ -84,7 +128,7 @@ export default {
             } else {
               this.verify = ''
             }
-            sessionStorage.setItem('detail', JSON.stringify(this.detail))
+            localStorage.setItem('detail', JSON.stringify(this.detail))
           } else {
             window.location.href = '/'
           }
@@ -109,7 +153,10 @@ export default {
       window.location.href = "/user"
     },
     initWebSocket () { // 初始化weosocket
-      const wsuri = process.env.VUE_APP_BASE_API.replace('http', 'ws') + '/connect/websocket?token=' + sessionStorage.getItem('token')
+      if (!localStorage.getItem('token')) {
+        window.location.href = '/'
+      }
+      const wsuri = process.env.VUE_APP_BASE_API.replace('http', 'ws') + '/connect/websocket?token=' + localStorage.getItem('token')
       this.websock = new WebSocket(wsuri)
       this.websock.onmessage = this.websocketonmessage
       this.websock.onopen = this.websocketonopen
@@ -134,7 +181,7 @@ export default {
       case 2:
         msgTip += '会话消息通知'
         if (redata.ws_message.session_message.session_message_type === 3) {
-          if (redata.ws_message.send.account_id != sessionStorage.getItem('user_id')) {
+          if (redata.ws_message.send.account_id != localStorage.getItem('user_id')) {
             this.$notify.success({
               title: '消息',
               message: msgTip,
@@ -150,7 +197,8 @@ export default {
       this.websocketMessage = redata
     },
     websocketclose (e) { // 关闭
-      console.log('断开连接', e)
+      this.$message.error('连接已断开，请刷新页面重试')
+      console.log(e)
       this.connect = false
     }
   },
@@ -179,5 +227,13 @@ export default {
 }
 .el-main {
   padding: 20px 5px;
+}
+
+#footer-mobile {
+  text-align: center;
+  position: absolute;
+  width: 100%;
+  bottom: 0px;
+  font-size:13px;
 }
 </style>

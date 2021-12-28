@@ -1,20 +1,22 @@
 <template>
-    <ol :index="router.path" v-if="router.hasOwnProperty('children')">
+    <!-- <ol :index="router.path" v-if="router.hasOwnProperty('children')">
       <span slot="title">{{router.name}}</span>
         <asideBarItem v-for="child in router.children" :key="child.path" :router="child">
         </asideBarItem>
-    </ol>
-    <!-- <el-submenu :index="router.path" v-if="router.hasOwnProperty('children')">
+    </ol> -->
+    <el-submenu :index="router.path" v-if="router.hasOwnProperty('children')">
       <span slot="title">{{router.name}}</span>
         <asideBarItem v-for="child in router.children" :key="child.path" :router="child">
         </asideBarItem>
-    </el-submenu> -->
-    <el-menu-item v-else :index="router.path" :key="router.path">
-      <span>{{router.name}}</span>
+    </el-submenu>
+    <el-menu-item v-else :index="router.path" :key="router.path" style="margin-left:0.82%;">
+      <div v-if="mobile">
+        <i :class="router.icon" style="text-align:center"></i>
+      </div>
+      <div v-else="">
+        <span>{{router.name}}</span>
+      </div>
     </el-menu-item>
-    <!-- <el-menu-item v-else :index="router.path" :key="router.path">
-      <span>{{router.name}}</span>
-    </el-menu-item> -->
 </template>
 <script>
 export default {
@@ -22,6 +24,9 @@ export default {
   props: {
     router: {
       type: Object
+    },
+    mobile: {
+      type: Boolean
     }
   }
 }

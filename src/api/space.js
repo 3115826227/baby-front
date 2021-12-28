@@ -17,7 +17,7 @@ export function getSpaces(req) {
 
 export function addComment(data) {
     return request({
-        url: '/space/comment',
+        url: '/comment/comment',
         method: 'post',
         data
     })
@@ -25,7 +25,7 @@ export function addComment(data) {
 
 export function addOperator(data) {
     return request({
-        url: '/space/operator',
+        url: '/comment/operator',
         method: 'post',
         data
     })

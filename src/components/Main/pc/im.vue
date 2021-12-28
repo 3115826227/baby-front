@@ -2,7 +2,7 @@
     <div id='im'>
         <div id="im-list">
           <div id="im-list-tabs">
-             <el-tabs v-model="activeName" type="border-card" @tab-click="handleClick" stretch style="height:600px">
+             <el-tabs v-model="activeName" type="border-card" @tab-click="handleClick" stretch style="height:630px">
               <el-tab-pane label="消息" name="session" style="height:540px;overflow:auto">
                 <el-card class="border-card" v-for="(item, index) in sessionDialogs" :key="index" style="margin:2% 0;">
                   <el-row>
@@ -27,8 +27,7 @@
                       <span v-if="item.latest_message.message_type !== 3">
                         <span v-if="item.latest_message.send.account_id !== user_id">
                         <span v-if="item.latest_message.send.remark === ''">{{item.latest_message.send.username}}</span>
-                        <span v-else="">{{item.latest_message.send.remark}}</span>
-                        ：</span>
+                        <span v-else="">{{item.latest_message.send.remark}}</span>：</span>
                           <span v-if="item.latest_message.message_type === 0">{{item.latest_message.content}}</span>
                           <span v-else-if="item.latest_message.message_type === 1">
                             [文件]
@@ -87,9 +86,25 @@
                     <el-button type="primary" size="small" @click="addFriendDrawer = true">添加好友</el-button>
                   </el-col>
                 </el-row>
-                <el-card class="border-card" v-for="(item, index) in friends" :key="index" style="margin:2% 0" shadow="hover">
-                  <div @click="findSessionByFriend(item.account_id)">
-                    {{item.remark}}
+                <el-card class="border-card" v-for="(item, index) in friends" :key="index" style="margin:2% 0;font-size:14px;" shadow="hover">
+                  <div @click="findSessionByFriend(item)">
+                    <el-row>
+                      <el-col :span="2">
+                        <el-avatar :src="item.user.head_img_url" size="small" fit="fit"></el-avatar>
+                      </el-col>
+                      <el-col :span="21" style="margin-left:1%;margin-top:1.3%;">
+                        <span>
+                      {{item.user.username}}
+                      <span style="color:gray;margin-left:1%;" @click="openUpdateRemarkDialog">(<span v-if="item.remark ===''">暂无备注</span><span v-else="">{{item.remark}}</span>)</span>
+                      <span style="margin-left:2%;">
+                        <span v-if="item.user.phone_verify">
+                          <svg class="icon" width="15px" height="15.00px" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"><path fill="#333333" d="M616.106667 891.855238H281.112381a60.952381 60.952381 0 0 1-60.952381-60.952381V192.609524a60.952381 60.952381 0 0 1 60.952381-60.952381h352.548571a60.952381 60.952381 0 0 1 60.952381 60.952381v224.060952c0 6.826667-5.36381 12.190476-12.190476 12.190476s-12.190476-5.36381-12.190476-12.190476V192.609524c0-20.23619-16.335238-36.571429-36.571429-36.571429H281.112381c-20.23619 0-36.571429 16.335238-36.571429 36.571429v638.293333c0 20.23619 16.335238 36.571429 36.571429 36.571429h334.994286c6.826667 0 12.190476 5.36381 12.190476 12.190476s-5.36381 12.190476-12.190476 12.190476z"  /><path fill="#333333" d="M682.422857 279.649524H232.350476c-6.826667 0-12.190476-5.36381-12.190476-12.190476s5.36381-12.190476 12.190476-12.190477h450.072381c6.826667 0 12.190476 5.36381 12.190476 12.190477s-5.607619 12.190476-12.190476 12.190476zM506.148571 750.445714H232.350476c-6.826667 0-12.190476-5.36381-12.190476-12.190476s5.36381-12.190476 12.190476-12.190476h273.798095c6.826667 0 12.190476 5.36381 12.190477 12.190476s-5.36381 12.190476-12.190477 12.190476zM504.441905 216.746667h-94.110476c-6.826667 0-12.190476-5.36381-12.190477-12.190477s5.36381-12.190476 12.190477-12.190476h94.110476c6.826667 0 12.190476 5.36381 12.190476 12.190476s-5.36381 12.190476-12.190476 12.190477zM481.767619 817.005714h-48.761905c-6.826667 0-12.190476-5.36381-12.190476-12.190476s5.36381-12.190476 12.190476-12.190476h48.761905c6.826667 0 12.190476 5.36381 12.190476 12.190476s-5.607619 12.190476-12.190476 12.190476z"  /><path fill="#333333" d="M457.386667 507.855238c-45.348571 0-82.16381-40.96-82.16381-91.184762s36.815238-91.184762 82.16381-91.184762 82.16381 40.96 82.163809 91.184762-36.815238 91.184762-82.163809 91.184762z m0-157.744762c-31.939048 0-57.782857 29.988571-57.782857 66.80381 0 36.815238 26.087619 66.80381 57.782857 66.803809s57.782857-29.988571 57.782857-66.803809c0-37.059048-25.84381-66.80381-57.782857-66.80381zM302.32381 705.097143c-6.826667 0-12.190476-5.36381-12.190477-12.190476v-61.927619c0-57.295238 73.386667-102.15619 167.253334-102.156191 12.921905 0 25.84381 0.975238 38.278095 2.681905 6.582857 0.975238 11.215238 7.070476 10.483809 13.653333s-7.070476 11.215238-13.653333 10.48381c-11.215238-1.462857-23.161905-2.438095-34.864762-2.438095-77.531429 0-142.872381 35.59619-142.872381 77.775238v61.927619c-0.24381 6.826667-5.851429 12.190476-12.434285 12.190476z"  /><path fill="#333333" d="M376.198095 705.097143c-6.826667 0-12.190476-5.36381-12.190476-12.190476v-26.331429c0-6.826667 5.36381-12.190476 12.190476-12.190476s12.190476 5.36381 12.190476 12.190476v26.331429c0 6.826667-5.607619 12.190476-12.190476 12.190476zM457.386667 667.062857c-6.826667 0-12.190476-5.36381-12.190477-12.190476v-66.80381c0-6.826667 5.36381-12.190476 12.190477-12.190476s12.190476 5.36381 12.190476 12.190476v66.80381c0 6.582857-5.607619 12.190476-12.190476 12.190476z"  /><path fill="#333333" d="M728.990476 913.798095c-2.438095 0-4.632381-0.731429-6.826666-1.950476-14.872381-9.99619-147.017143-98.742857-166.521905-149.211429-33.401905-86.308571-27.306667-206.506667-26.819048-211.626666 0-39.253333 187.977143-105.081905 200.167619-105.081905s200.167619 65.584762 200.167619 105.569524c0.24381 4.388571 6.339048 124.830476-26.819047 211.139047-19.504762 50.468571-151.405714 139.215238-166.521905 149.211429-2.194286 1.219048-4.632381 1.950476-6.826667 1.950476z m-0.243809-443.489524c-22.430476 1.219048-166.521905 63.146667-176.030477 83.139048 0.24381 0-5.851429 118.979048 25.6 200.411429 13.409524 34.620952 107.52 103.862857 150.430477 133.12 42.910476-29.257143 137.020952-98.255238 150.430476-133.12 31.451429-81.432381 25.35619-200.411429 25.35619-201.630477-9.020952-18.773333-153.112381-80.944762-175.786666-81.92z"  /><path fill="#333333" d="M714.605714 755.321905a11.459048 11.459048 0 0 1-8.533333-3.657143l-78.019048-78.019048c-4.87619-4.87619-4.87619-12.434286 0-17.310476s12.434286-4.87619 17.310477 0l69.485714 69.485714 118.003809-118.003809c4.87619-4.87619 12.434286-4.87619 17.310477 0s4.87619 12.434286 0 17.310476l-126.537143 126.537143c-2.681905 2.438095-5.851429 3.657143-9.020953 3.657143z"  /></svg>
+                        </span>
+                        <!-- <el-tag v-else="" size="mini">未认证</el-tag> -->
+                      </span>  
+                    </span>
+                      </el-col>
+                    </el-row>
                   </div>
                 </el-card>
               </el-tab-pane>
@@ -108,6 +123,11 @@
                 <el-card class="border-card" v-for="(item, index) in sessions" :key="index" style="margin:2% 0" shadow="hover">
                   <div @click="selectSession(item.session_id)">
                     {{item.name}}
+                    <el-tag size="mini">
+                      <span v-if="item.session_type === 0">双人会话</span>
+                      <span v-else-if="item.session_type === 1">讨论组</span>
+                      <span v-else-if="item.session_type === 2">群会话</span>
+                    </el-tag>
                   </div>
                 </el-card>
               </el-tab-pane>
@@ -193,7 +213,7 @@
                         </el-col>
                       </el-row>
                     </div>
-                    <div id="im-messages" style="height:380px;overflow:auto">
+                    <div id="im-messages" style="height:347px;overflow:auto">
                       <template v-if="!noMoreMessage">
                         <div style="text-align:center" @click="getMoreSessionMessages(session.session_id)">
                           <el-link style="font-size:13px">查看更多消息</el-link>
@@ -346,12 +366,12 @@
                             <i class="el-icon-document"></i>
                         </el-upload>
                       </el-col>
-                      <el-col :span="1">
+                      <el-col :span="1" v-if="session.session_type === 0">
                         <div @click="sendWebRTC(100, true)">
                           <i class="el-icon-video-camera"></i>
                         </div>
                       </el-col>
-                      <el-col :span="1">
+                      <el-col :span="1" v-if="session.session_type === 0">
                         <div @click="sendWebRTC(100, false)">
                           <i class="el-icon-phone-outline"></i>
                         </div>
@@ -476,9 +496,10 @@
               <template v-else="">
                 <el-col :span="18">
                   {{query_user.username}}
+                  <el-tag v-if="!query_user.phone_verify" type="info" size="small">未认证</el-tag>
                 </el-col>
                 <el-col :span="6" style="text-align:right">
-                  <el-button type="primary" size="mini" @click="addFriend">添加好友</el-button>
+                  <el-button type="primary" size="mini" @click="addUnverifyFriendVisible = true">添加好友</el-button>
                 </el-col>
               </template>
             </el-row>
@@ -610,10 +631,31 @@
             <img :src="currentBigImageUrl" width="auto">
           </div>
         </el-dialog>
+        <el-dialog title="修改备注" :visible.sync="updateRemarkVisible" width="32%">
+          <el-form>
+            <el-form-item label="好友备注：">
+              <el-input v-model="friend.remark" style="width:70%"></el-input> 
+            </el-form-item>
+            <el-form-item label="好友用户名：" v-if="friend.user">
+              {{friend.user.username}}
+            </el-form-item>
+          </el-form>
+          <div style="text-align:right">
+            <el-button @click="updateRemarkVisible = false">取 消</el-button>
+            <el-button type="primary" @click="updateRemark">确 定</el-button>
+          </div>
+        </el-dialog>
+        <el-dialog title="添加未认证好友友情提示" :visible.sync="addUnverifyFriendVisible" width="40%">
+          <span style="font-weight:600px">友情提示</span>：该好友暂未进行任何验证，添加之后可能存在诈骗风险，您确定要添加吗
+          <div slot="footer" class="dialog-footer">
+            <el-button @click="addUnverifyFriendVisible = false" size="small">取 消</el-button>
+            <el-button type="primary" @click="addFriend" size="small">确 定</el-button>
+          </div>
+        </el-dialog>
     </div>
 </template>
 <script>
-import { addSession, session, sessionDialog, deleteSessionDialog, sessionDetail, sessionMessages, readstatus, singleMessageReadstatus, friends, findSessionByFriend, addFriend, addOperator, confirmOperator, operators, deleteOpt, userManage, updateUserManage, getReadUsers, deleteMessage, withDrawnMessage, flushMessage } from '@/api/im'
+import { addSession, session, sessionDialog, deleteSessionDialog, sessionDetail, sessionMessages, readstatus, singleMessageReadstatus, friends, findSessionByFriend, addFriend, addOperator, confirmOperator, operators, deleteOpt, userManage, updateUserManage, getReadUsers, deleteMessage, withDrawnMessage, flushMessage, updateFriendRemark } from '@/api/im'
 import { query } from '@/api/user'
 import { upload } from '@/api/file'
 var log = msg => {
@@ -707,7 +749,9 @@ export default {
       },
       current_friend_status: 0,
       message_read_users: {},
-      turn_config: {}
+      turn_config: {},
+      updateRemarkVisible: false,
+      addUnverifyFriendVisible: false
     }
   },
   watch: {
@@ -829,7 +873,7 @@ export default {
         // 通话邀请
         this.webRTCSession(true, video)
         await this.sleepTime(3000)
-        actions.ws_message.session_message.web_rtc.account_id = sessionStorage.getItem('user_id')
+        actions.ws_message.session_message.web_rtc.account_id = localStorage.getItem('user_id')
         actions.ws_message.session_message.web_rtc.sdp = this.localSession
       } else if (session_message_type === 200) {
         // 接受通话
@@ -986,7 +1030,7 @@ export default {
     },
     addSession () {
       let ids = []
-      ids.push(sessionStorage.getItem('user_id'))
+      ids.push(localStorage.getItem('user_id'))
       this.multipleSessionFriendSelection.forEach(element => {
         ids.push(element.account_id)
       })
@@ -1034,8 +1078,8 @@ export default {
       return url.match(reg)
     },
     init () {
-      this.user_id = sessionStorage.getItem('user_id')
-      this.username = sessionStorage.getItem('username')
+      this.user_id = localStorage.getItem('user_id')
+      this.username = localStorage.getItem('username')
       console.log(process.env.VUE_APP_BASE_API)
       this.turn_config.url = 'turn:' + this.getIP(process.env.VUE_APP_BASE_API) + ':3478'
       this.turn_config.username = 'kurento'
@@ -1059,8 +1103,18 @@ export default {
       var d = time.getDate()
       var h = time.getHours()
       var mm = time.getMinutes()
-      var s = time.getSeconds()
-      return y + '-' + this.add0(m) + '-' + this.add0(d) + ' ' + this.add0(h) + ':' + this.add0(mm) + ':' + this.add0(s)
+      var now = new Date(Date.parse(new Date()))
+      var nowYear = now.getFullYear()
+      var nowMonth = now.getMonth() + 1
+      var nowDay = now.getDate()
+      var str = ''
+      if (nowYear !== y) {
+        str = y + '-'
+      }
+      if (m !== nowMonth || d !== nowDay) {
+        str = this.add0(m) + '-' + this.add0(d) + ' '
+      }
+      return str + this.add0(h) + ':' + this.add0(mm)
     },
     getSessions () {
       var that = this
@@ -1175,7 +1229,7 @@ export default {
       sessionDetail(sessionId).then(response => {
         if (response.data.code === 0) {
           this.session = response.data.data
-          let user_id = sessionStorage.getItem('user_id')
+          let user_id = localStorage.getItem('user_id')
           if (this.session.session_type === 0) {
             for (var i = 0; i < this.session.joins.length; i++) {
                 if (this.session.joins[i].account_id != user_id) {
@@ -1274,22 +1328,14 @@ export default {
           console.log(error)
           this.$message.error('请求出错')
         })
+      this.addUnverifyFriendVisible = false
     },
     judgeIsConnect () {
-      if (this.websock.readyState != 1) {
+      if (this.websock.readyState !== 1) {
         this.$message.error('通讯连接断开，请刷新重试')
         return false
       }
       return true
-    },
-    selectFriend (val) {
-      if (val.id === '') {
-        return
-      }
-      this.userInfoGet(val.friend)
-      this.current_chat = val
-      this.current_chat.type = 'friend'
-      this.getMessage()
     },
     handleClick (data) {
         console.log(data)
@@ -1308,7 +1354,8 @@ export default {
         })
     },
     findSessionByFriend (friend) {
-      findSessionByFriend(friend).then(response => {
+      this.friend = friend
+      findSessionByFriend(friend.user.account_id).then(response => {
         if (response.data.code === 0) {
           this.selectSession(response.data.data)
         }
@@ -1678,9 +1725,26 @@ export default {
         console.log(error)
       })
     },
-  },
-  destroyed () {
-    this.websock.close() // 离开路由之后断开websocket连接
+    openUpdateRemarkDialog () {
+      this.updateRemarkVisible = true
+    },
+    updateRemark () {
+      var data = {
+        friend: this.friend.user.account_id,
+        remark: this.friend.remark
+      }
+      updateFriendRemark(data).then(response => {
+        if (response.data.code === 0) {
+          this.getFriends()
+        } else {
+          this.$message.error('修改失败')
+        }
+      }).catch(error => {
+        console.log(error)
+        this.$message.error('请求错误')
+      })
+      this.updateRemarkVisible = false
+    }
   }
 }
 </script>

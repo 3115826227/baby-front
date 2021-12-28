@@ -67,7 +67,7 @@
                         ******&nbsp;&nbsp;&nbsp;
                         <template @click="getPwd"><el-link icon="el-icon-view" :underline="false">查看密码</el-link></template>
                         &nbsp;&nbsp;
-                        <template @click="updatePwd"><el-link icon="el-icon-edit" :underline="false">修改密码</el-link></template>
+                        <template @click="updatePwd"><el-link icon="el-icon-edit" :underline="false" type="danger">修改密码</el-link></template>
                     </el-col>
                 </el-row>
                 <el-row class="panel-content-item">
@@ -88,11 +88,11 @@
                         <label>手机号：</label>
                     </el-col>
                     <el-col :span="12">
-                        <span v-if="edit">
-                            <el-input v-model="detail_form.phone" size="small" :placeholder="detail.phone"></el-input>
+                        <span v-if="detail.phone_verify">
+                            <label>{{detail.phone}}</label>
                         </span>
                         <span v-else="">
-                            <label>{{detail.phone}}</label>
+                            <el-link type="primary">点击验证</el-link>
                         </span>
                     </el-col>
                 </el-row>
@@ -199,10 +199,10 @@ export default ({
     },
     methods: {
         getDetail() {
-            if (!sessionStorage.getItem('token')) {
-              window.location.href = '/'
+            if (!localStorage.getItem('token')) {
+              window.location.href = '/login'
             }
-            this.detail = JSON.parse(sessionStorage.getItem('detail'))
+            this.detail = JSON.parse(localStorage.getItem('detail'))
         },
         getUpdatedDetail () {
             detail().then(response => {
@@ -212,7 +212,7 @@ export default ({
                 } else {
                     this.verify = ''
                 }
-                sessionStorage.setItem('detail', JSON.stringify(this.detail))
+                localStorage.setItem('detail', JSON.stringify(this.detail))
             })
             .catch(error => {
                 console.log(error)
@@ -299,7 +299,6 @@ export default ({
                 return
             }
             this.detail_form.gender = parseInt(this.gender)
-            console.log(this.detail_form)
             updateDetail(this.detail_form).then(response => {
                 if (response.data.code === 0) {
                     this.$message.success('更新成功')

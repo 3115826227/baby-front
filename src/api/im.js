@@ -152,3 +152,11 @@ export function flushMessage (req) {
         method: 'delete'
     })
 }
+
+export function updateFriendRemark (data) {
+    return request({
+        url: '/im/session/friend/remark',
+        method: 'patch',
+        data
+    })
+}

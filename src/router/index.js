@@ -10,40 +10,100 @@ export const constantRoutes = [
       component: () => import('@/components/Index'),
       children: [
         {
-          path: '/im',
+          path: '/pc/im',
           index: 1,
           name: '聊天',
-          component: () => import('@/components/Main/im.vue')
+          icon: 'el-icon-chat-dot-round',
+          component: () => import('@/components/Main/pc/im.vue')
         },
+        // {
+        //   path: '/pc/live',
+        //   index: 2,
+        //   name: '直播',
+        //   component: () => import('@/components/Main/pc/live.vue')
+        // },
         {
-          path: '/space',
-          index: 2,
-          name: '空间动态',
-          component: () => import('@/components/Main/space.vue')
-        },
-        {
-          path: '/user',
+          path: '/pc/space',
           index: 3,
-          name: '个人中心',
-          component: () => import('@/components/Main/user.vue')
+          name: '空间动态',
+          icon: 'el-icon-orange',
+          component: () => import('@/components/Main/pc/space.vue')
+        },
+        // {
+        //   path: '/pc/blog',
+        //   index: 4,
+        //   name: '博客',
+        //   component: () => import('@/components/Main/pc/blog.vue')
+        // },
+        {
+          path: '/blog/manage',
+          component:  () => import('@/components/Main/pc/blog_manage.vue'),
         },
         {
-          path: '/communication',
-          index: 4,
-          name: '建议反馈',
-          component: () => import('@/components/Main/communication.vue')
+          path: '/blog/:blog_id',
+          components: {
+            blog_content: () => import('@/components/Main/pc/blog_content.vue'),
+          },
+          props: {
+            blog_content: true
+          }
         },
         {
-          path: '/version',
+          path: '/pc/user',
           index: 5,
+          name: '个人中心',
+          icon: 'el-icon-user',
+          component: () => import('@/components/Main/pc/user.vue')
+        },
+        {
+          path: '/pc/communication',
+          index: 6,
+          name: '建议反馈',
+          icon: 'el-icon-position',
+          component: () => import('@/components/Main/pc/communication.vue')
+        },
+        {
+          path: '/pc/version',
+          index: 7,
           name: '版本',
-          component: () => import('@/components/Main/version.vue')
+          icon: 'el-icon-guide',
+          component: () => import('@/components/Main/pc/version.vue')
+        },
+        {
+          path: '/mobile/im',
+          index: 1001,
+          icon: 'el-icon-chat-dot-round',
+          component: () => import('@/components/Main/mobile/im.vue')
+        },
+        {
+          path: '/mobile/space',
+          index: 1002,
+          icon: 'el-icon-orange',
+          component: () => import('@/components/Main/mobile/space.vue')
+        },
+        {
+          path: '/mobile/user',
+          index: 1003,
+          icon: 'el-icon-user',
+          component: () => import('@/components/Main/mobile/user.vue')
+        },
+        {
+          path: '/mobile/communication',
+          index: 1004,
+          icon: 'el-icon-position',
+          component: () => import('@/components/Main/mobile/communication.vue')
+        },
+        {
+          path: '/mobile/version',
+          index: 1005,
+          icon: 'el-icon-guide',
+          component: () => import('@/components/Main/mobile/version.vue')
         },
       ]
      }, {
-        path: '/',
-        component: () => import('@/components/Login'),
-        hidden: true
+      path: '/',
+      component: () => import('@/components/Login'),
+      hidden: true
     }
 ]
 
@@ -54,6 +114,5 @@ const createRouter = () => new Router({
 })
 
 const router = createRouter()
-
 
 export default router
