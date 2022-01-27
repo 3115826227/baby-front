@@ -15,6 +15,14 @@ export function getSpaces(req) {
     })
 }
 
+export function deleteSpace(id) {
+    return request({
+        url: '/space/space?id=' + id,
+        method: 'delete'
+    })
+}
+
+
 export function addComment(data) {
     return request({
         url: '/comment/comment',

@@ -160,3 +160,48 @@ export function updateFriendRemark (data) {
         data
     })
 }
+
+export function updateFriendBlackList (data) {
+    return request({
+        url: '/im/session/friend/black_list',
+        method: 'patch',
+        data
+    })
+}
+
+export function deleteFriend (friend) {
+    return request({
+        url: '/im/session/friend?friend=' + friend,
+        method: 'delete',
+    })
+}
+
+export function sendMessage (data) {
+    return request({
+        url: '/im/session/message',
+        method: 'post',
+        data
+    })
+}
+
+export function getUserImgCollects(req) {
+    return request({
+        url: '/im/session/img/collect?' + '&page=' + req.page + '&page_size=' + req.page_size,
+        method: 'get'
+    })
+}
+
+export function addUserImgCollect(data) {
+    return request({
+        url: 'im/session/img/collect',
+        method: 'post',
+        data
+    })
+}
+
+export function deleteUserImgCollect(img) {
+    return request({
+        url: 'im/session/img/collect?img=' + img,
+        method: 'delete'
+    })
+}

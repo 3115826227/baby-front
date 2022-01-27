@@ -47,19 +47,19 @@
             </el-card>
             <el-card id="illustrate">
                 <div>
-                    <label><p>Golang微服务系统 <span style="font-size:12px;color:gray">当前版本：0.1.2</span></p></label>
+                    <label><p>Golang微服务系统 <span style="font-size:12px;color:gray">当前版本：0.1.5</span></p></label>
                 </div>
                 <el-collapse v-model="activeNames" style="">
                     <el-collapse-item title="即时通信" name="1">
                         <p style="margin-left:4%;color:gray">· 支持好友、讨论组、群管理</p>
                         <p style="margin-left:4%;color:gray">· 支持单聊、群聊，获取好友在线状态和编辑状态</p>
-                        <p style="margin-left:4%;color:gray">· 支持表情包、图片、文件消息发送</p>
-                        <p style="margin-left:4%;color:gray">· 支持消息撤回、获取已读回执</p>
+                        <p style="margin-left:4%;color:gray">· 支持表情包、图片、文件消息发送，支持表情包收藏</p>
+                        <p style="margin-left:4%;color:gray">· 支持消息撤回、获取已读回执、消息删除</p>
                     </el-collapse-item>
                     <el-collapse-item title="空间动态" name="2">
-                        <p style="margin-left:4%;color:gray">· 支持动态发布</p>
-                        <p style="margin-left:4%;color:gray">· 支持动态评论</p>
-                        <p style="margin-left:4%;color:gray">· 支持动态评论回复</p>
+                        <p style="margin-left:4%;color:gray">· 支持动态发布、匿名发布，支持图片添加</p>
+                        <p style="margin-left:4%;color:gray">· 支持动态盖楼评论</p>
+                        <p style="margin-left:4%;color:gray">· 支持动态评论的回复</p>
                     </el-collapse-item>
                     <el-collapse-item title="用户管理" name="3">
                         <p style="margin-left:4%;color:gray">· 支持头像上传</p>

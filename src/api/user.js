@@ -47,7 +47,7 @@ export function query(id) {
 
 export function signinlog() {
     return request({
-        url: 'account/user/sign_in/log?day=1',
+        url: 'account/user/sign_in/log?month=1',
         method: 'get'
     })
 }
@@ -84,6 +84,13 @@ export function getCommunicationDetail(id) {
 export function getVersions() {
     return request({
         url: 'account/user/iter/version',
+        method: 'get'
+    })
+}
+
+export function signin() {
+    return request({
+        url: 'account/user/sign_in',
         method: 'get'
     })
 }

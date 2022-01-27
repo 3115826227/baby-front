@@ -35,6 +35,9 @@
                           <span v-else-if="item.latest_message.message_type === 2">
                             [图片]
                           </span>
+                          <span v-else-if="item.latest_message.message_type === 4">
+                            [表情]
+                          </span>
                           <span v-else-if="item.latest_message.message_type === 100">
                             [通话记录]
                           </span>
@@ -75,7 +78,7 @@
                 </el-card>
               </el-tab-pane>
               <el-tab-pane label="好友" name="friend" style="height:530px;overflow:auto">
-                <el-row style="margin:2% 0">
+                <el-row style="padding:2% 0">
                   <el-col :span="15" style="padding-right:4%">
                     <el-input type="text" size="small" />
                   </el-col>
@@ -92,17 +95,29 @@
                       <el-col :span="2">
                         <el-avatar :src="item.user.head_img_url" size="small" fit="fit"></el-avatar>
                       </el-col>
-                      <el-col :span="21" style="margin-left:1%;margin-top:1.3%;">
+                      <el-col :span="12" style="padding-left:1%;margin-top:1.3%;">
                         <span>
                       {{item.user.username}}
-                      <span style="color:gray;margin-left:1%;" @click="openUpdateRemarkDialog">(<span v-if="item.remark ===''">暂无备注</span><span v-else="">{{item.remark}}</span>)</span>
-                      <span style="margin-left:2%;">
+                      <span style="color:gray;padding-left:1%;" @click="openUpdateRemarkDialog">(<span v-if="item.remark ===''">暂无备注</span><span v-else="">{{item.remark}}</span>)</span>
+                      <span style="padding-left:2%;">
                         <span v-if="item.user.phone_verify">
                           <svg class="icon" width="15px" height="15.00px" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"><path fill="#333333" d="M616.106667 891.855238H281.112381a60.952381 60.952381 0 0 1-60.952381-60.952381V192.609524a60.952381 60.952381 0 0 1 60.952381-60.952381h352.548571a60.952381 60.952381 0 0 1 60.952381 60.952381v224.060952c0 6.826667-5.36381 12.190476-12.190476 12.190476s-12.190476-5.36381-12.190476-12.190476V192.609524c0-20.23619-16.335238-36.571429-36.571429-36.571429H281.112381c-20.23619 0-36.571429 16.335238-36.571429 36.571429v638.293333c0 20.23619 16.335238 36.571429 36.571429 36.571429h334.994286c6.826667 0 12.190476 5.36381 12.190476 12.190476s-5.36381 12.190476-12.190476 12.190476z"  /><path fill="#333333" d="M682.422857 279.649524H232.350476c-6.826667 0-12.190476-5.36381-12.190476-12.190476s5.36381-12.190476 12.190476-12.190477h450.072381c6.826667 0 12.190476 5.36381 12.190476 12.190477s-5.607619 12.190476-12.190476 12.190476zM506.148571 750.445714H232.350476c-6.826667 0-12.190476-5.36381-12.190476-12.190476s5.36381-12.190476 12.190476-12.190476h273.798095c6.826667 0 12.190476 5.36381 12.190477 12.190476s-5.36381 12.190476-12.190477 12.190476zM504.441905 216.746667h-94.110476c-6.826667 0-12.190476-5.36381-12.190477-12.190477s5.36381-12.190476 12.190477-12.190476h94.110476c6.826667 0 12.190476 5.36381 12.190476 12.190476s-5.36381 12.190476-12.190476 12.190477zM481.767619 817.005714h-48.761905c-6.826667 0-12.190476-5.36381-12.190476-12.190476s5.36381-12.190476 12.190476-12.190476h48.761905c6.826667 0 12.190476 5.36381 12.190476 12.190476s-5.607619 12.190476-12.190476 12.190476z"  /><path fill="#333333" d="M457.386667 507.855238c-45.348571 0-82.16381-40.96-82.16381-91.184762s36.815238-91.184762 82.16381-91.184762 82.16381 40.96 82.163809 91.184762-36.815238 91.184762-82.163809 91.184762z m0-157.744762c-31.939048 0-57.782857 29.988571-57.782857 66.80381 0 36.815238 26.087619 66.80381 57.782857 66.803809s57.782857-29.988571 57.782857-66.803809c0-37.059048-25.84381-66.80381-57.782857-66.80381zM302.32381 705.097143c-6.826667 0-12.190476-5.36381-12.190477-12.190476v-61.927619c0-57.295238 73.386667-102.15619 167.253334-102.156191 12.921905 0 25.84381 0.975238 38.278095 2.681905 6.582857 0.975238 11.215238 7.070476 10.483809 13.653333s-7.070476 11.215238-13.653333 10.48381c-11.215238-1.462857-23.161905-2.438095-34.864762-2.438095-77.531429 0-142.872381 35.59619-142.872381 77.775238v61.927619c-0.24381 6.826667-5.851429 12.190476-12.434285 12.190476z"  /><path fill="#333333" d="M376.198095 705.097143c-6.826667 0-12.190476-5.36381-12.190476-12.190476v-26.331429c0-6.826667 5.36381-12.190476 12.190476-12.190476s12.190476 5.36381 12.190476 12.190476v26.331429c0 6.826667-5.607619 12.190476-12.190476 12.190476zM457.386667 667.062857c-6.826667 0-12.190476-5.36381-12.190477-12.190476v-66.80381c0-6.826667 5.36381-12.190476 12.190477-12.190476s12.190476 5.36381 12.190476 12.190476v66.80381c0 6.582857-5.607619 12.190476-12.190476 12.190476z"  /><path fill="#333333" d="M728.990476 913.798095c-2.438095 0-4.632381-0.731429-6.826666-1.950476-14.872381-9.99619-147.017143-98.742857-166.521905-149.211429-33.401905-86.308571-27.306667-206.506667-26.819048-211.626666 0-39.253333 187.977143-105.081905 200.167619-105.081905s200.167619 65.584762 200.167619 105.569524c0.24381 4.388571 6.339048 124.830476-26.819047 211.139047-19.504762 50.468571-151.405714 139.215238-166.521905 149.211429-2.194286 1.219048-4.632381 1.950476-6.826667 1.950476z m-0.243809-443.489524c-22.430476 1.219048-166.521905 63.146667-176.030477 83.139048 0.24381 0-5.851429 118.979048 25.6 200.411429 13.409524 34.620952 107.52 103.862857 150.430477 133.12 42.910476-29.257143 137.020952-98.255238 150.430476-133.12 31.451429-81.432381 25.35619-200.411429 25.35619-201.630477-9.020952-18.773333-153.112381-80.944762-175.786666-81.92z"  /><path fill="#333333" d="M714.605714 755.321905a11.459048 11.459048 0 0 1-8.533333-3.657143l-78.019048-78.019048c-4.87619-4.87619-4.87619-12.434286 0-17.310476s12.434286-4.87619 17.310477 0l69.485714 69.485714 118.003809-118.003809c4.87619-4.87619 12.434286-4.87619 17.310477 0s4.87619 12.434286 0 17.310476l-126.537143 126.537143c-2.681905 2.438095-5.851429 3.657143-9.020953 3.657143z"  /></svg>
                         </span>
                         <!-- <el-tag v-else="" size="mini">未认证</el-tag> -->
+                        <span v-if="item.black_list" style="color:gray;">
+                          <i class="el-icon-warning"></i>
+                        </span>
                       </span>  
-                    </span>
+                      </span>
+                      </el-col>
+                      <el-col :span="10" style="text-align:right;">
+                        <span style="margin-right:5%;">
+                          <el-button v-if="!item.black_list" size="mini" type="warning" @click="updateFriendBlackList(item.user.account_id, true)">拉黑</el-button>
+                          <el-button v-else="" size="mini" type="success" @click="updateFriendBlackList(item.user.account_id, false)">取消拉黑</el-button>
+                        </span>
+                        <span>
+                          <el-button size="mini" type="danger" @click="deleteFriend(item.user.account_id)">删除</el-button>
+                        </span>
                       </el-col>
                     </el-row>
                   </div>
@@ -272,6 +287,9 @@
                                   <!-- <img :src="item.content" width="50px" /> -->
                                   <el-avatar shape="square" :size="60" fit="fill" :src="item.content"></el-avatar>
                                 </span>
+                                <span v-else-if="item.message_type === 4">
+                                  <img :src="item.content" />
+                                </span>
                                 <span v-else-if="item.message_type === 100" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
                                   通话时长 [{{timeFormat(item.content)}}]
                                 </span>
@@ -314,6 +332,9 @@
                                   <span v-else-if="item.message_type === 2" @click="loadBigImage(item.content)">
                                     <el-avatar shape="square" :size="60" fit="fill" :src="item.content"></el-avatar>
                                   </span>
+                                  <span v-else-if="item.message_type === 4">
+                                    <img :src="item.content" />
+                                  </span>
                                   <span v-else-if="item.message_type === 100" style="padding:1% 2%;background-color:#C0C4CC;border-radius:8px;">
                                     通话时长 [{{timeFormat(item.content)}}]
                                   </span>
@@ -350,11 +371,23 @@
                             width="400"
                             trigger="click"
                             >
-                            <span v-for="(item, index) in wxImgList" :key="index" @click="imgClick(index)">
+                            <span v-for="(item, index) in wxImgList" :key="index" @click="sendEmoji(index)">
                               <img :src="'https://res.wx.qq.com/mpres/htmledition/images/icon/emotion/'+index+'.gif'" />
                             </span>
                             <i slot="reference" class="el-icon-circle-plus-outline"></i>
                           </el-popover>
+                      </el-col>
+                      <el-col :span="1">
+                        <el-popover
+                        placement="bottom"
+                        width="400"
+                        trigger="click"
+                        >
+                        <span v-for="(img, index) in imgCollects" :key="index" @click="sendImgCollect(img)">
+                              <el-avatar shape="square" :size="80" fit="fill" :src="img"></el-avatar>
+                            </span>
+                        <i slot="reference" class="el-icon-star-off"></i>
+                        </el-popover>
                       </el-col>
                       <el-col :span="1">
                         <el-upload ref="upload_image" action="#" :auto-upload="false" :show-file-list="false" :on-change="sendImage">
@@ -401,7 +434,12 @@
                       <div style="font-size:13px;color:gray">成员·<span v-if="session.joins">{{session.joins.length}}</span></div>
                       <div style="height:180px; overflow:auto;">
                         <div v-for="item in session.joins" :key="item.account_id" style="font-size:13px;padding:2% 0;" @click="openFriendDrawer(item.account_id)">
-                          <span style="color:gray;margin-right:2%">{{item.username}}</span>
+                          <span style="color:gray;margin-right:2%">
+                            <span v-if="item.remark !== ''">
+                              {{item.remark}}
+                            </span>
+                            <span v-else="">{{item.username}}</span>
+                          </span>
                           <el-tag size="mini" v-if="item.online_type === 1" type="info">
                             <span>离线</span>
                           </el-tag>
@@ -490,7 +528,7 @@
                   {{query_user.remark}} <el-tag type="success" size="small">好友</el-tag>
                 </el-col>
                 <el-col :span="12" style="text-align:right">
-                  <el-button type="primary" size="mini" @click="addFriend" disabled>添加好友</el-button>
+                  <el-button type="primary" size="mini" disabled>添加好友</el-button>
                 </el-col>
               </template>
               <template v-else="">
@@ -655,7 +693,7 @@
     </div>
 </template>
 <script>
-import { addSession, session, sessionDialog, deleteSessionDialog, sessionDetail, sessionMessages, readstatus, singleMessageReadstatus, friends, findSessionByFriend, addFriend, addOperator, confirmOperator, operators, deleteOpt, userManage, updateUserManage, getReadUsers, deleteMessage, withDrawnMessage, flushMessage, updateFriendRemark } from '@/api/im'
+import { addSession, session, sessionDialog, deleteSessionDialog, sessionDetail, sessionMessages, readstatus, singleMessageReadstatus, friends, findSessionByFriend, addFriend, addOperator, confirmOperator, operators, deleteOpt, userManage, updateUserManage, getReadUsers, deleteMessage, withDrawnMessage, flushMessage, updateFriendRemark, sendMessage, updateFriendBlackList, deleteFriend, addUserImgCollect, getUserImgCollects, deleteUserImgCollect } from '@/api/im'
 import { query } from '@/api/user'
 import { upload } from '@/api/file'
 var log = msg => {
@@ -751,7 +789,8 @@ export default {
       message_read_users: {},
       turn_config: {},
       updateRemarkVisible: false,
-      addUnverifyFriendVisible: false
+      addUnverifyFriendVisible: false,
+      imgCollects: []
     }
   },
   watch: {
@@ -842,6 +881,11 @@ export default {
       var data = new FormData();
       data.append('file', file.raw);
       this.uploadData(data, 2)
+    },
+    sendImgCollect (img) {
+      this.send_form_type = 2
+      this.send_form_content = img
+      this.send()
     },
     sleepTime (time) {
       return new Promise((resolve) => {
@@ -1032,7 +1076,7 @@ export default {
       let ids = []
       ids.push(localStorage.getItem('user_id'))
       this.multipleSessionFriendSelection.forEach(element => {
-        ids.push(element.account_id)
+        ids.push(element.user.account_id)
       })
       let params = {
         session_type: this.session_type,
@@ -1080,11 +1124,11 @@ export default {
     init () {
       this.user_id = localStorage.getItem('user_id')
       this.username = localStorage.getItem('username')
-      console.log(process.env.VUE_APP_BASE_API)
       this.turn_config.url = 'turn:' + this.getIP(process.env.VUE_APP_BASE_API) + ':3478'
       this.turn_config.username = 'kurento'
       this.turn_config.credential = 'kurento'
-      console.log(this.turn_config)
+      this.getUserImgCollects()
+
     },
     timeFormat (time) {
       var h = parseInt(time/3600)
@@ -1341,12 +1385,10 @@ export default {
         console.log(data)
     },
     getFriends () {
-      var that = this
-      friends()
-      .then(response => {
+      friends().then(response => {
         console.log(response)
         if (response.data.code === 0) {
-          that.friends = response.data.data.friends
+          this.friends = response.data.data.friends
         }
       })
         .catch(error => {
@@ -1585,24 +1627,39 @@ export default {
     websocketsend (Data) { // 数据发送
       this.websock.send(Data)
     },
-    send () {
+    sendEmoji (index) {
+      var data = {
+        session_id: this.session.session_id,
+        message_type: 4,
+        content: 'https://res.wx.qq.com/mpres/htmledition/images/icon/emotion/'+index+'.gif'
+      }
+      sendMessage(data).then(response => {
+        if (response.data.code !== 0) {
+          this.$message.error('发送失败')
+        }
+      }).catch(error => {
+        console.log(error)
+      })
       if (!this.judgeIsConnect()) {
         return
       }
-      let actions = {
-        ws_message_notify_type: 2,
-        ws_message: {
-          session_message: {
-            session_message_type: 3,
-            message: {
-              session_id: this.session.session_id,
-              message_type: this.send_form_type,
-              content: this.send_form_content
-            }
-          }
-        }
+    },
+    send () {
+      var data = {
+        session_id: this.session.session_id,
+        message_type: this.send_form_type,
+        content: this.send_form_content
       }
-      this.websocketsend(JSON.stringify(actions))
+      sendMessage(data).then(response => {
+        if (response.data.code !== 0) {
+          this.$message.error('发送失败')
+        }
+      }).catch(error => {
+        console.log(error)
+      })
+      if (!this.judgeIsConnect()) {
+        return
+      }
       this.send_form_type = 0
       this.send_form_content = ''
     },
@@ -1744,7 +1801,75 @@ export default {
         this.$message.error('请求错误')
       })
       this.updateRemarkVisible = false
-    }
+    },
+    updateFriendBlackList (friend, black_list) {
+      var data = {
+        friend: friend,
+        black_list: black_list
+      }
+      updateFriendBlackList(data).then(response => {
+        if (response.data.code === 0) {
+          this.getFriends()
+        } else {
+          this.$message.error(response.data.message)
+        }
+      }).catch(error => {
+        console.log(error)
+        this.$message.error('请求错误')
+      })
+    },
+    deleteFriend (friend) {
+      deleteFriend(friend).then(response => {
+        if (response.data.code === 0) {
+          this.getFriends()
+        } else {
+          this.$message.error(response.data.message)
+        }
+      }).catch(error => {
+        console.log(error)
+        this.$message.error('请求错误')
+      })
+    },
+    addUserImgCollect (img) {
+      addUserImgCollect(img).then(response => {
+        if (response.data.code === 0) {
+          this.getUserImgCollects()
+        } else {
+          this.$message.error(response.data.message)
+        }
+      }).catch(error => {
+        console.log(error)
+        this.$message.error('请求错误')
+      })
+    },
+    getUserImgCollects () {
+      var req = {
+        page: 1,
+        page_size: 20,
+      }
+      getUserImgCollects(req).then(response => {
+        if (response.data.code === 0) {
+          this.imgCollects = response.data.data.list
+        } else {
+          this.$message.error(response.data.message)
+        }
+      }).catch(error => {
+        console.log(error)
+        this.$message.error('请求错误')
+      })
+    },
+    deleteUserImgCollect (img) {
+      deleteUserImgCollect(img).then(response => {
+        if (response.data.code === 0) {
+          this.getUserImgCollects()
+        } else {
+          this.$message.error(response.data.message)
+        }
+      }).catch(error => {
+        console.log(error)
+        this.$message.error('请求错误')
+      })
+    },
   }
 }
 </script>

@@ -5,12 +5,7 @@
                 <el-avatar :src="detail.head_img_url" :size="150" fit="fit"></el-avatar>
             </div>
             <div id="signin">
-                <template v-if="signin_status">
-                    <label style="color:gray;font-size:13px">今日已签到</label>
-                </template>
-                <template v-else="">
-                    <el-button type="danger" size="small" round>签到领积分</el-button>
-                </template>
+                <el-button type="danger" size="small" round @click="signInVisible = true">签到领积分</el-button>
             </div>
             <div id="nav">
                 <el-menu :default-active="active_index"  class="el-menu-vertical-demo" @select="handleSelect">
@@ -156,12 +151,30 @@
                 <el-button type="primary" @click="uploadImage">上 传</el-button>
             </span>
         </el-dialog>
+        <el-dialog :visible.sync="signInVisible" title="签到">
+            <div style="text-align:right">
+                <template v-if="signin_status">
+                    <label style="color:#409EFF;font-size:13px">今日已签到</label>
+                </template>
+                <template v-else="">
+                    <el-button type="primary" size="small" round @click="signin">签到领积分</el-button>
+                </template>
+            </div>
+            <el-calendar>
+                <template
+                    slot="dateCell"
+                    slot-scope="{data}">
+                    <p>{{ data.day.split('-').slice(1).join('-') }}</p>
+                    <span :style="dateMap[data.day] ? 'color:red;font-size:12px;':''">{{ dateMap[data.day] ? '已签到' : ''}}</span>
+                </template>
+            </el-calendar>
+        </el-dialog>
     </div>
 </template>
 
 <script>
 import { upload } from '@/api/file.js';
-import { detail, updateDetail, signinlog, coinlog } from '@/api/user.js';
+import { detail, updateDetail, signinlog, coinlog, signin } from '@/api/user.js';
 import { timestampToTime } from '@/utils/utils.js' 
 export default ({
     name: 'user',
@@ -176,7 +189,9 @@ export default ({
             edit: false,
             detail_form: {},
             gender: '',
-            update: false
+            update: false,
+            signInVisible: false,
+            dateMap: {}
         }
     },
     created () {
@@ -225,6 +240,10 @@ export default ({
                     if (response.data.data.length !== 0) {
                         this.signin_status = true
                     }
+                    this.dateMap = new Map()
+                    response.data.data.forEach(e => {
+                        this.dateMap[this.getDay(e.timestamp)] = 1
+                    })
                 } else {
                     this.$message.error(response.data.msg)
                 }
@@ -313,6 +332,29 @@ export default ({
             })
             this.edit = false
             this.update = false
+        },
+        signin () {
+            signin()
+            .then(response => {
+                if (response.data.code === 0) {
+                    this.getSignInLog()
+                } else {
+                    this.$message.error(response.data.message)
+                }
+            }).catch(error => {
+                console.log(error)
+                this.$message.error('请求错误')
+            })
+        },
+        add0 (m) {
+            return m < 10 ? '0' + m : m
+        },
+        getDay (timestamp) {
+            var time = new Date(timestamp * 1000)
+            var y = time.getFullYear()
+            var m = time.getMonth() + 1
+            var d = time.getDate()
+            return y + '-' + this.add0(m) + '-' + this.add0(d)
         }
     }
 })

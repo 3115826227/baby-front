@@ -26,14 +26,14 @@
               </el-submenu>
             </el-menu>
         </el-header>
-        <el-container id="content" style="height:auto">
-            <el-main class="el-main" style="height:auto">
+        <el-container id="content" style="height:100%">
+            <el-main class="el-main" style="height:100%">
                 <el-breadcrumb separator-class="el-icon-arrow-right">
                   <el-breadcrumb-item v-for="item in levelList" :key="item.path">
                     <span>{{item.name}}</span>
                   </el-breadcrumb-item>
                 </el-breadcrumb>
-                <Content :websocketClient = "websock" :websocketMessage="websocketMessage"></Content>
+                <Content :websocketClient = "websock" :websocketMessage="websocketMessage" :detail="detail"></Content>
             </el-main>
         </el-container>
       <!-- </div> -->
