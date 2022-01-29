@@ -101,7 +101,6 @@
                               <span style="padding-right:3%;"><i class="el-icon-chat-line-round"></i></span>
                               <span v-if="!item.open_comment"><a @click="item.open_comment = !item.open_comment">评论</a></span>
                               <span v-else=""><a @click="item.open_comment = !item.open_comment">收起评论</a></span>
-                              <!-- <i class="iconfont">&#xe6d3;</i> -->
                               <span v-if="item.comment_total" style="padding-left:2%;">{{item.comment_total}}</span>
                             </el-col>
                             <el-col :span="8" style="line-height:26px;">
@@ -184,6 +183,17 @@
                                               </el-col>
                                             </el-row>
                                           </div>
+                                          <div style="margin-top:2%;text-align:right;" @click="getReply(index, comment_index)">
+                                            <el-pagination
+                                              small 
+                                              hide-on-single-page
+                                              layout="total, prev, next"
+                                              @current-change="handleCurrentReplyChange"
+                                              :page-size="current_reply_page_size"
+                                              :current-page="comment.current_reply_page"
+                                              :total="comment.reply_total">
+                                            </el-pagination>
+                                          </div>
                                           <el-row style="margin-top:2%;">
                                               <el-col :span="19">
                                                 <el-input size="mini" v-model="comment.reply_content" placeholder="回复一下"></el-input>
@@ -198,6 +208,17 @@
                                   </div>
                                 </el-col>
                               </el-row>
+                            </div>
+                            <div style="margin-top:2%;margin-right:10%;text-align:right;" @click="getComments(index)">
+                              <el-pagination
+                                small 
+                                hide-on-single-page
+                                layout="total, prev, next"
+                                @current-change="handleCurrentCommentChange"
+                                :page-size="current_comment_page_size"
+                                :current-page="item.current_comment_page"
+                                :total="item.floor_total">
+                              </el-pagination>
                             </div>
                             <div style="margin-top:2%;margin-right:2%;">
                               <el-row>
@@ -223,7 +244,7 @@
 </template>
 
 <script>
-import { getSpaces, addSpace, deleteSpace, addOperator, addComment } from '@/api/space'
+import { getSpaces, addSpace, deleteSpace, addOperator, addComment, getComment, getReply } from '@/api/space'
 import { upload } from '@/api/file'
 
 export default {
@@ -248,6 +269,10 @@ export default {
       isRefreshBool: true,
       spaceEditorVisitor: false, 
       noMoreSpace: false,
+      current_comment_page: 1,
+      current_comment_page_size: 5,
+      current_reply_page: 1,
+      current_reply_page_size: 4
     }
   },
   created () {
@@ -323,7 +348,11 @@ export default {
       }
       getSpaces(req).then(response => {
           if (response.data.code === 0) {
-            this.spaces = response.data.data.list
+            this.spaces = []
+            response.data.data.list.forEach(e => {
+              e.page_size = this.current_comment_page_size
+              this.spaces.push(e)
+            })
           } else {
             this.$message.error('请求失败')
           }
@@ -571,6 +600,66 @@ export default {
           this.spaces.splice(index, 1)
         } else {
           this.$message.error('请求失败')
+        }
+      }).catch(error => {
+        console.log(error)
+        this.$message.error('请求出错')
+      })
+    },
+    handleCurrentCommentChange (current_page) {
+      this.current_comment_page = current_page
+    },
+    handleCurrentReplyChange (current_page) {
+      this.current_reply_page = current_page
+      console.log(this.current_reply_page)
+    },
+    getComments (index) {
+      if (this.current_comment_page === this.spaces[index].current_comment_page) {
+        return
+      }
+      console.log(index, this.current_comment_page, this.spaces[index].current_comment_page)
+      var req = {
+        biz_id: this.spaces[index].id,
+        biz_type: 1,
+        page: this.current_comment_page,
+        pageSize: this.current_comment_page_size
+      }
+      getComment(req).then(response => {
+        if (response.data.code === 0) {
+          let space = this.spaces[index]
+          space.comments = response.data.data.list
+          space.current_comment_page = this.current_comment_page
+          this.spaces.splice(index, 1, space)
+        } else {
+          this.$message.error(response.data.message)
+        }
+      }).catch(error => {
+        console.log(error)
+        this.$message.error('请求出错')
+      })
+    },
+    getReply (index, comment_index) {
+      if ( this.current_reply_page === this.spaces[index].comments[comment_index].current_reply_page) {
+        return
+      }
+      console.log(index, comment_index, this.current_reply_page)
+      var req = {
+        biz_id: this.spaces[index].id,
+        biz_type: 1,
+        floor: this.spaces[index].comments[comment_index].floor,
+        page: this.current_reply_page,
+        pageSize: this.current_reply_page_size
+      }
+      getReply(req).then(response => {
+        if (response.data.code === 0) {
+          let space = this.spaces[index]
+          let comment = space.comments[comment_index]
+          comment.reply = response.data.data.list
+          comment.current_reply_page = this.current_reply_page
+          space.comments.splice(comment_index, 1, comment)
+          this.spaces.splice(index, 1, space)
+        } else {
+          this.$message.error(response.data.message)
         }
       }).catch(error => {
         console.log(error)

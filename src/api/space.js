@@ -15,6 +15,20 @@ export function getSpaces(req) {
     })
 }
 
+export function getComment(req) {
+    return request({
+        url: '/comment/comment?' + 'page=' + req.page + '&page_size=' + req.pageSize + '&biz_id=' + req.biz_id + '&biz_type=' + req.biz_type,
+        method: 'get'
+    })
+}
+
+export function getReply(req) {
+    return request({
+        url: '/comment/comment/reply?' + 'page=' + req.page + '&page_size=' + req.pageSize + '&biz_id=' + req.biz_id + '&biz_type=' + req.biz_type + '&floor=' + req.floor,
+        method: 'get'
+    })
+}
+
 export function deleteSpace(id) {
     return request({
         url: '/space/space?id=' + id,

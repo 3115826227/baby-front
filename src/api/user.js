@@ -45,9 +45,16 @@ export function query(id) {
     })
 }
 
-export function signinlog() {
+export function signInMonthlog() {
     return request({
         url: 'account/user/sign_in/log?month=1',
+        method: 'get'
+    })
+}
+
+export function signInTodaylog() {
+    return request({
+        url: 'account/user/sign_in/log?day=1',
         method: 'get'
     })
 }
@@ -78,6 +85,13 @@ export function getCommunicationDetail(id) {
     return request({
         url: 'account/user/communication/detail?id=' + id,
         method: 'get'
+    })
+}
+
+export function deleteCommunication(id) {
+    return request({
+        url: 'account/user/communication?id=' + id,
+        method: 'delete'
     })
 }
 

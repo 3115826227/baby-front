@@ -206,7 +206,7 @@
                   <el-card class="box-card">
                     <div slot="header">
                       <el-row>
-                        <el-col :span="20">
+                        <el-col :span="14">
                           <span>{{session.name}} </span>
                           <el-tag size="mini">
                             <span v-if="session.session_type === 0">双人会话</span>
@@ -223,8 +223,18 @@
                           </span>
                           <span v-if="user_inputting.inputting && user_inputting.session_id === session.session_id" style="color:gray;font-size:13px;margin-left:1%">对方正在输入</span>
                         </el-col>
-                        <el-col :span="4" style="text-align:right;font-size:14px;font-weight:500;color:#F56C6C">
-                          <span @click="flushMessage(session)">清空消息</span>
+                        <el-col :span="10" style="text-align:right;font-size:14px;font-weight:500;">
+                          <span v-if="session.session_type !== 0 && session.origin === detail.account_id" style="padding-right:3%">
+                            <a @click="updateSessionNameVisisble = true">修改名称</a>
+                          </span>
+                          <span v-if="session.session_type !== 0 && session.origin === detail.account_id" style="padding-right:3%">
+                            <a style="color:rgb(230, 162, 60)">设置</a>
+                          </span>
+                          <span @click="flushMessage(session)" style="color:#F56C6C">清空消息</span>
+                          <span style="padding-left:3%;color:#F56C6C;">
+                            <span v-if="session.session_type !== 0 && session.origin === detail.account_id" @click="deleteSession()">解散会话</span>
+                            <span v-else="" @click="leaveSession()">退出会话</span>
+                          </span>
                         </el-col>
                       </el-row>
                     </div>
@@ -431,21 +441,40 @@
                     </div>
                     <HR></HR>
                     <div>
-                      <div style="font-size:13px;color:gray">成员·<span v-if="session.joins">{{session.joins.length}}</span></div>
+                      <el-row style="font-size:13px;color:gray">
+                        <el-col :span="23">
+                          成员·<span v-if="session.joins">{{session.joins.length}}</span>
+                        </el-col>
+                        <el-col :span="1" v-if="detail.account_id === session.origin" style="text-align;right;font-size:15px;color:black;font-weight:600">
+                          <a @click="inviteJoinVisible = true">+</a>
+                        </el-col>
+                      </el-row>
                       <div style="height:180px; overflow:auto;">
-                        <div v-for="item in session.joins" :key="item.account_id" style="font-size:13px;padding:2% 0;" @click="openFriendDrawer(item.account_id)">
-                          <span style="color:gray;margin-right:2%">
-                            <span v-if="item.remark !== ''">
-                              {{item.remark}}
-                            </span>
-                            <span v-else="">{{item.username}}</span>
-                          </span>
-                          <el-tag size="mini" v-if="item.online_type === 1" type="info">
-                            <span>离线</span>
-                          </el-tag>
-                          <el-tag size="mini" v-else-if="item.online_type === 11" type="success">
-                            <span>电脑在线</span>
-                          </el-tag>
+                        <div v-for="item in session.joins" :key="item.account_id" style="font-size:13px;padding:2% 0;">
+                          <el-row>
+                            <el-col :span="18">
+                              <span style="color:gray;padding-right:2%;font-weight:300px" @click="openFriendDrawer(item.account_id)">
+                                <span v-if="item.remark !== ''">
+                                  {{item.remark}}
+                                </span>
+                                <span v-else="">{{item.username}}</span>
+                              </span>
+                              <el-tag size="mini" v-if="item.online_type === 1" type="info">
+                                <span>离线</span>
+                              </el-tag>
+                              <el-tag size="mini" v-else-if="item.online_type === 11" type="success">
+                                <span>电脑在线</span>
+                              </el-tag>
+                              <span v-if="item.account_id === session.origin" style="padding-left:3%;">
+                                <el-tag size="mini" type="info" effect="plain">
+                                  <span style="font-size:12px;">群主</span>
+                                </el-tag>
+                              </span>
+                            </el-col>
+                            <el-col :span="6" v-if="detail.account_id === session.origin" style="text-align:right;color:#F56C6C;font-weight:500;font-size:13px;">
+                              <span @click="removeUser(item.account_id)">移出会话</span>
+                            </el-col>
+                          </el-row>
                         </div>
                       </div>
                     </div>
@@ -690,10 +719,45 @@
             <el-button type="primary" @click="addFriend" size="small">确 定</el-button>
           </div>
         </el-dialog>
+        <el-dialog title="修改名称" :visible.sync="updateSessionNameVisisble" width="80">
+          <el-form>
+            <el-form-item label="原名称：">
+              <span>{{session.name}}</span>
+            </el-form-item>
+            <el-form-item label="新名称：">
+              <el-input v-model="session_form.name" style="width:70%"></el-input>
+            </el-form-item>
+          </el-form>
+          <div style="text-align:right">
+            <el-button @click="updateSessionNameVisisble = false">取 消</el-button>
+            <el-button type="primary" @click="updateSession">确 定</el-button>
+          </div>
+        </el-dialog>
+        <el-dialog title="邀请好友加入讨论组/群" :visible.sync="inviteJoinVisible" width="60">
+          <div style="margin-bottom:2%;font-size:15px;">
+            <span style="margin-right:1%;font-weight:400">名称：</span>
+            <span style="color:gray">{{session.name}}</span>
+          </div>
+          <el-table :data="friends" ref="multipleSessionInviteFriendSelection" style="width: 100%;margin-bottom:2%;" @selection-change="handleSelectionInviteFriendChange">
+            <el-table-column
+              type="selection"
+              :selectable="checkSelectable"
+              width="55">
+            </el-table-column>
+            <el-table-column
+              prop="remark"
+              label="昵称">
+            </el-table-column>
+          </el-table>
+          <div style="text-align:right">
+            <el-button @click="inviteJoinVisible = false">取 消</el-button>
+            <el-button type="primary" @click="inviteJoinSession()">确 定</el-button>
+          </div>
+        </el-dialog>
     </div>
 </template>
 <script>
-import { addSession, session, sessionDialog, deleteSessionDialog, sessionDetail, sessionMessages, readstatus, singleMessageReadstatus, friends, findSessionByFriend, addFriend, addOperator, confirmOperator, operators, deleteOpt, userManage, updateUserManage, getReadUsers, deleteMessage, withDrawnMessage, flushMessage, updateFriendRemark, sendMessage, updateFriendBlackList, deleteFriend, addUserImgCollect, getUserImgCollects, deleteUserImgCollect } from '@/api/im'
+import { addSession, session, sessionDialog, deleteSessionDialog, sessionDetail, sessionMessages, readstatus, singleMessageReadstatus, friends, findSessionByFriend, addFriend, addOperator, confirmOperator, operators, deleteOpt, userManage, updateUserManage, getReadUsers, deleteMessage, withDrawnMessage, flushMessage, updateFriendRemark, sendMessage, updateFriendBlackList, deleteFriend, addUserImgCollect, getUserImgCollects, deleteUserImgCollect, updateSession, removeUser, inviteUser, leaveSession, deleteSession} from '@/api/im'
 import { query } from '@/api/user'
 import { upload } from '@/api/file'
 var log = msg => {
@@ -701,7 +765,7 @@ var log = msg => {
 };
 export default {
   name: 'im',
-  props: ['websocketClient', 'websocketMessage'],
+  props: ['websocketClient', 'websocketMessage', 'detail'],
   data () {
     return {
       activeName: 'session',
@@ -713,6 +777,7 @@ export default {
       friend: {},
       friends: [],
       multipleSessionFriendSelection: [],
+      multipleSessionInviteFriendSelection: [],
       session_types: [{
         id: 1,
         name: '讨论组会话'
@@ -790,7 +855,10 @@ export default {
       turn_config: {},
       updateRemarkVisible: false,
       addUnverifyFriendVisible: false,
-      imgCollects: []
+      imgCollects: [],
+      updateSessionNameVisisble: false,
+      session_form: {},
+      inviteJoinVisible: false
     }
   },
   watch: {
@@ -842,6 +910,14 @@ export default {
     this.initWebSocket()
   },
   methods: {
+    checkSelectable (row) {
+      for (let index = 0; index < this.session.joins.length; index++) {
+        if (this.session.joins[index].account_id === row.user.account_id) {
+          return false
+        }
+      } 
+      return true
+    },
     setTimer (f, interval) {
       this.timeFunction = setInterval(() => {
         f()
@@ -1108,6 +1184,9 @@ export default {
     },
     handleSelectionFriendChange (val) {
         this.multipleSessionFriendSelection = val;
+    },
+    handleSelectionInviteFriendChange (val) {
+        this.multipleSessionInviteFriendSelection = val;
     },
     scrollToBottom () {
       this.$nextTick(() => {
@@ -1774,7 +1853,7 @@ export default {
       flushMessage(session).then(response => {
         if (response.data.code === 0) {
           this.messages = []
-          this.$message.error('清空成功')
+          this.$message.success('清空成功')
         } else {
           this.$message.error('清空失败')
         }
@@ -1870,6 +1949,90 @@ export default {
         this.$message.error('请求错误')
       })
     },
+    updateSession () {
+      console.log(this.session)
+      console.log(this.session_form)
+      var data = {
+        session_id: this.session.session_id,
+        name: this.session_form.name,
+        join_permission_type: this.session.join_permission_type
+      }
+      updateSession(data).then(response => {
+        if (response.data.code === 0 ) {
+          this.session.name = this.session_form.name
+          this.session_form = {}
+          this.updateSessionNameVisisble = false
+          this.$message.success('修改成功')
+        } else {
+          this.$message.error(response.data.message)
+        }
+       }).catch(error => {
+        console.log(error)
+        this.$message.error('请求错误')
+      })
+    },
+    inviteJoinSession () {
+      this.multipleSessionInviteFriendSelection.forEach(element => {
+        let data = {
+          session_id: this.session.session_id,
+          account_id: element.user.account_id
+        }
+        inviteUser(data).then(response => {
+          if (response.data.code !== 0 ) {
+            this.$message.error(response.data.message)
+          }
+        }).catch(error => {
+          console.log(error)
+          this.$message.error('请求错误')
+        })
+      })
+      this.$message.success('邀请成功')
+      this.inviteJoinVisible = false
+    },
+    removeUser (id) {
+      var data = {
+        session_id: this.session.session_id,
+        account_id: id
+      }
+      removeUser(data).then(response => {
+        if (response.data.code === 0 ) {
+          this.getSessionDetail(this.session.session_id)
+        } else {
+          this.$message.error(response.data.message)
+        }
+       }).catch(error => {
+        console.log(error)
+        this.$message.error('请求错误')
+      })
+    },
+    leaveSession () {
+      leaveSession(this.session.session_id).then(response => {
+        if (response.data.code === 0 ) {
+          this.panel = 0
+          this.session = {}
+          this.getSessionDialog()
+        } else {
+          this.$message.error(response.data.message)
+        }
+       }).catch(error => {
+        console.log(error)
+        this.$message.error('请求错误')
+      })
+    },
+    deleteSession () {
+      deleteSession(this.session.session_id).then(response => {
+        if (response.data.code === 0 ) {
+          this.panel = 0
+          this.session = {}
+          this.getSessionDialog()
+        } else {
+          this.$message.error(response.data.message)
+        }
+       }).catch(error => {
+        console.log(error)
+        this.$message.error('请求错误')
+      })
+    }
   }
 }
 </script>

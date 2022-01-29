@@ -8,6 +8,13 @@ export function addSession(data) {
     })
 }
 
+export function updateSession (data) {
+    return request({
+        url: '/im/session',
+        method: 'patch',
+        data
+    })
+}
 
 export function session() {
     return request({
@@ -202,6 +209,36 @@ export function addUserImgCollect(data) {
 export function deleteUserImgCollect(img) {
     return request({
         url: 'im/session/img/collect?img=' + img,
+        method: 'delete'
+    })
+}
+
+export function removeUser(data) {
+    return request({
+        url: 'im/session/remove',
+        method: 'post',
+        data
+    })
+}
+
+export function inviteUser(data) {
+    return request({
+        url: 'im/session/invite',
+        method: 'post',
+        data
+    })
+}
+
+export function leaveSession(session_id) {
+    return request({
+        url: 'im/session/leave?session_id=' + session_id,
+        method: 'get'
+    })
+}
+
+export function deleteSession(session_id) {
+    return request({
+        url: 'im/session?session_id=' + session_id,
         method: 'delete'
     })
 }

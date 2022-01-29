@@ -174,7 +174,7 @@
 
 <script>
 import { upload } from '@/api/file.js';
-import { detail, updateDetail, signinlog, coinlog, signin } from '@/api/user.js';
+import { detail, updateDetail, signInMonthlog, signInTodaylog, coinlog, signin } from '@/api/user.js';
 import { timestampToTime } from '@/utils/utils.js' 
 export default ({
     name: 'user',
@@ -196,7 +196,8 @@ export default ({
     },
     created () {
         this.getDetail()
-        this.getSignInLog()
+        this.getSignInMonthLog()
+        this.getSignInTodayLog()
         this.getCoinLog()
     },
     watch: {
@@ -233,13 +234,28 @@ export default ({
                 console.log(error)
             })
         },
-        getSignInLog() {
-            signinlog()
+        getSignInTodayLog () {
+            signInTodaylog()
             .then(response => {
                 if (response.data.code === 0) {
                     if (response.data.data.length !== 0) {
                         this.signin_status = true
                     }
+                    response.data.data.forEach(e => {
+                        this.dateMap[this.getDay(e.timestamp)] = 1
+                    })
+                } else {
+                    this.$message.error(response.data.msg)
+                }
+            }).catch(error => {
+                console.log(error)
+                this.$message.error('请求错误')
+            })
+        },
+        getSignInMonthLog() {
+            signInMonthlog()
+            .then(response => {
+                if (response.data.code === 0) {
                     this.dateMap = new Map()
                     response.data.data.forEach(e => {
                         this.dateMap[this.getDay(e.timestamp)] = 1
@@ -337,7 +353,8 @@ export default ({
             signin()
             .then(response => {
                 if (response.data.code === 0) {
-                    this.getSignInLog()
+                    this.getSignInMonthLog()
+                    this.getSignInTodayLog()
                 } else {
                     this.$message.error(response.data.message)
                 }
